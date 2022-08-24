@@ -7,7 +7,6 @@
 
 extern "C"
 {
-#include <libavutil/log.h>
 #include <libavutil/avassert.h>
 #include <libavutil/opt.h>
 #include <libavutil/mathematics.h>

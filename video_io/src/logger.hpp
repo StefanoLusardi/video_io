@@ -23,6 +23,8 @@ extern "C"
 
 namespace vc
 {
+enum class log_level { all, info, error };
+
 class logger
 {
 public:

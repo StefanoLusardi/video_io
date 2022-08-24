@@ -1,8 +1,8 @@
 #include <video_io/video_reader.hpp>
-#include <video_reader/raw_frame.hpp>
+#include <video_io/raw_frame.hpp>
 
 #include "logger.hpp"
-#include "hw_acceleration.hpp"
+#include "video_reader_hw.hpp"
 
 #include <thread>
 #include <chrono>
@@ -32,7 +32,7 @@ video_reader::~video_reader() noexcept
     release();
 }
 
-void video_reader::set_log_callback(const log_callback_t& cb, const log_level& level) { vc::logger::get().set_log_callback(cb, level); }
+// void video_reader::set_log_callback(const log_callback_t& cb, const log_level& level) { vc::logger::get().set_log_callback(cb, level); }
 
 bool video_reader::open(const std::string& video_path, decode_support decode_preference)
 {
@@ -72,7 +72,7 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
         return false;
     }
 
-    AVCodec* codec = nullptr;
+    const AVCodec* codec = nullptr;
     if (_stream_index = av_find_best_stream(_format_ctx, AVMediaType::AVMEDIA_TYPE_VIDEO, -1, -1, &codec, 0); _stream_index < 0)
     {
         log_error("av_find_best_stream", vc::logger::get().err2str(_stream_index));

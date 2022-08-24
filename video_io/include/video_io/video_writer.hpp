@@ -30,7 +30,7 @@ public:
     explicit video_writer() noexcept;
     ~video_writer() noexcept;
     
-    using log_callback_t = std::function<void(const std::string&)>;
+    // using log_callback_t = std::function<void(const std::string&)>;
     // void set_log_callback(const log_callback_t& cb, const log_level& level = log_level::all);    
 
     bool open(const std::string& video_path);
@@ -38,6 +38,8 @@ public:
     bool write(uint8_t** data);
     bool write(raw_frame* frame);
     void release();
+
+    void save();
     
     // auto get_frame_count() const -> std::optional<int>;
     // auto get_duration() const -> std::optional<std::chrono::steady_clock::duration>;
@@ -46,7 +48,7 @@ public:
     // auto get_fps() const -> std::optional<double>;
 
 protected:
-    // void init();
+    void init();
     bool write_frame();
     // bool decode();
     // bool retrieve();

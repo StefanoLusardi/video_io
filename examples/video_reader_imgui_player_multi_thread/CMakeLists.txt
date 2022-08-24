@@ -1,4 +1,4 @@
-set(TARGET_NAME video_reader_imgui_player)
+set(TARGET_NAME video_reader_imgui_player_multi_thread)
 
 add_executable(${TARGET_NAME}
 	src/application.cpp

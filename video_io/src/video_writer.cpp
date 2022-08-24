@@ -23,14 +23,21 @@ extern "C"
 
 namespace vc
 {
-video_writer::video_writer()
-: _is_opened { true }
+video_writer::video_writer() noexcept
+: _is_opened { false }
 {
+    init(); 
     av_log_set_level(0);
 }
 
-video_writer::~video_writer()
+video_writer::~video_writer() noexcept
 {
+    release();
+}
+
+void video_writer::init()
+{
+
 }
 
 bool video_writer::open(const std::string& video_path)
@@ -38,11 +45,11 @@ bool video_writer::open(const std::string& video_path)
     AVFormatContext *_format_ctx;
 
     /* allocate the output media context */
-    avformat_alloc_output_context2(&_format_ctx, NULL, NULL, filename);
+    avformat_alloc_output_context2(&_format_ctx, NULL, NULL, video_path.c_str());
     if (!_format_ctx) 
     {
         printf("Could not deduce output format from file extension: using MPEG.\n");
-        avformat_alloc_output_context2(&_format_ctx, NULL, "mpeg", filename);
+        avformat_alloc_output_context2(&_format_ctx, NULL, "mpeg", video_path.c_str());
     }
 
     if (!_format_ctx)
@@ -51,18 +58,18 @@ bool video_writer::open(const std::string& video_path)
     _output_format = _format_ctx->oformat;
 
     const AVCodec *video_codec;
-    add_stream(&video_st, _format_ctx, &video_codec, _output_format->video_codec);
+    add_stream(&_stream, _format_ctx, &video_codec, _output_format->video_codec);
 
-    open_video(_format_ctx, video_codec, &video_st, opt);
+    open_video(_format_ctx, video_codec, &_stream, opt);
  
-    av_dump_format(_format_ctx, 0, filename, 1);
+    av_dump_format(_format_ctx, 0, video_path.c_str(), 1);
 
     AVDictionary *opt = NULL;
  
     /* open the output file, if needed */
     if (!(_output_format->flags & AVFMT_NOFILE)) 
     {
-        int ret = avio_open(&_format_ctx->pb, filename, AVIO_FLAG_WRITE);
+        int ret = avio_open(&_format_ctx->pb, video_path.c_str(), AVIO_FLAG_WRITE);
         if (ret < 0) 
         {
             // fprintf(stderr, "Could not open '%s': %s\n", filename, av_err2str(ret));

@@ -3,8 +3,10 @@ imgui/1.87
 glfw/3.3.7
 ffmpeg/5.0
 
+#opencv/4.5.5 # conflicts with ffmpeg 5.0
+
 [generators]
-CMakeDeps
+cmake_find_package
 
 [imports]
 ./res/bindings, imgui_impl_glfw.h -> ../bindings

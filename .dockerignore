@@ -1,0 +1,16 @@
+**/.git
+**/.gitignore
+**/.dockerignore
+**/.cache
+**/.vs
+**/.vscode
+**/build
+**/ci
+**/scripts
+**/.clang-format
+**/.clang-tidy
+**/.gitignore
+**/CHANGELOG.md
+**/Dockerfile*
+**/compile_commands.json
+**/README.md

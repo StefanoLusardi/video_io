@@ -22,7 +22,6 @@ namespace vc
 {
 struct raw_frame;
 enum class decode_support { none, SW, HW };
-enum class log_level { all, info, error };
 
 class API_VIDEO_IO video_reader
 {
@@ -31,7 +30,7 @@ public:
     ~video_reader() noexcept;
     
     using log_callback_t = std::function<void(const std::string&)>;
-    void set_log_callback(const log_callback_t& cb, const log_level& level = log_level::all);    
+    // void set_log_callback(const log_callback_t& cb, const log_level& level = log_level::all);
 
     bool open(const std::string& video_path, decode_support decode_preference = decode_support::none);
     bool is_opened() const;

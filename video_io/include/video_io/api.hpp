@@ -8,8 +8,8 @@
 	#define API_IMPORT __attribute__ ((visibility ("default")))
 #endif
 
-#ifdef LIB_VIDEO_CAPTURE
-	#define API_VIDEO_CAPTURE API_EXPORT
+#ifdef VIDEO_IO
+	#define API_VIDEO_IO API_EXPORT
 #else
-	#define API_VIDEO_CAPTURE API_IMPORT
+	#define API_VIDEO_IO API_IMPORT
 #endif 

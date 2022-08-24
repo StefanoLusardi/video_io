@@ -24,7 +24,7 @@ struct raw_frame;
 enum class decode_support { none, SW, HW };
 enum class log_level { all, info, error };
 
-class API_VIDEO_CAPTURE video_reader
+class API_VIDEO_IO video_reader
 {
 public:
     explicit video_reader() noexcept;

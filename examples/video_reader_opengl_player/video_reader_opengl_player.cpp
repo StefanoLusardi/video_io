@@ -14,7 +14,7 @@
 #include <atomic>
 
 #include <video_io/video_reader.hpp>
-#include <video_reader/raw_frame.hpp>
+#include <video_io/raw_frame.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
 	vc::video_reader vc;
-	const auto video_path = "../../../tests/data/v.mp4";
+	const auto video_path = "testsrc.mp4";
 
 	vc.open(video_path, vc::decode_support::SW);
 

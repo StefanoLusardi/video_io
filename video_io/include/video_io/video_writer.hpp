@@ -49,39 +49,32 @@ public:
 
 protected:
     void init();
+    bool add_stream();
+    bool open_video();
+    AVFrame* alloc_picture(int pix_fmt, int width, int height);
     bool write_frame();
-    // bool decode();
-    // bool retrieve();
-    // bool is_error(const char* func_name, const int error) const;
+    void close_stream();
+
+    // bool encode();
+    // bool convert();
 
 private:
     bool _is_opened;
     std::mutex _open_mutex;
 
-    AVStream* _stream;
- 
-    /* pts of the next frame that will be generated */
     int64_t next_pts;
-    int samples_count;
- 
-    AVFrame *frame;
- 
-    float t, tincr, tincr2;
- 
+    AVStream* _stream;
+    
+    AVFrame* _frame;
+    AVFrame* _tmp_frame;
+
     SwsContext* _sws_ctx;
 
+    const AVCodec* codec;
     const AVOutputFormat *_output_format;
     AVFormatContext* _format_ctx;
     AVCodecContext* _codec_ctx;
     AVPacket* _packet;
-    
-    // AVFrame* _src_frame;
-    // AVFrame* _dst_frame;
-    AVFrame* _tmp_frame;
-    
-    AVDictionary* _options;
-    int _stream_index;
-    double _timestamp_unit;
 };
 
 }

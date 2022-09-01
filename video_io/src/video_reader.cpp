@@ -340,13 +340,13 @@ bool video_reader::retrieve()
 
 bool video_reader::read(uint8_t** data)
 {
-    if(!grab())
+    if(!grab()) // decode
         return false;
 
-    if(!decode())
+    if(!decode()) // hw_accel
         return false;
 
-    if(!retrieve())
+    if(!retrieve()) // convert
         return false;
 
     *data = _dst_frame->data[0];

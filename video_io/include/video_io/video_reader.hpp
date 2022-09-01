@@ -67,7 +67,6 @@ private:
     SwsContext* _sws_ctx;
     AVDictionary* _options;
     int _stream_index;
-    double _timestamp_unit;
 
     class hw_acceleration;
     std::unique_ptr<hw_acceleration> _hw;

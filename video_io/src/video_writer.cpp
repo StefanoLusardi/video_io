@@ -11,6 +11,7 @@ extern "C"
 #include <libavutil/timestamp.h>
 #include <libavutil/dict.h>
 #include <libavutil/channel_layout.h>
+#include <libavutil/imgutils.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
@@ -42,8 +43,6 @@ void video_writer::init()
 bool video_writer::open(const std::string& video_path)
 {
     std::lock_guard lock(_open_mutex);
-
-    AVFormatContext *_format_ctx;
 
     /* allocate the output media context */
     avformat_alloc_output_context2(&_format_ctx, NULL, NULL, video_path.c_str());
@@ -235,9 +234,11 @@ bool video_writer::is_opened() const
     return _is_opened;
 }
 
-bool video_writer::write(uint8_t** data)
+bool video_writer::write(const uint8_t* data)
 {
-    // get_video_frame();
+    av_image_fill_arrays(_frame->data, _frame->linesize, data, _codec_ctx->pix_fmt, _codec_ctx->width, _codec_ctx->height, 1);
+    
+    _frame->pts = next_pts++;
     return write_frame();
 }
 
@@ -254,7 +255,7 @@ void video_writer::save()
     av_write_trailer(_format_ctx);
  
     // TODO: check if this is required at this line or it can be merged into release() called later in this function.
-    // close_stream();
+    close_stream();
  
     if (!(_output_format->flags & AVFMT_NOFILE))
         avio_closep(&_format_ctx->pb);
@@ -273,11 +274,11 @@ void video_writer::close_stream()
 
 void video_writer::release()
 {
-    avcodec_free_context(&_codec_ctx);
-    av_frame_free(&_frame);
-    av_frame_free(&_tmp_frame);
-    av_packet_free(&_packet);
-    sws_freeContext(_sws_ctx);
+    // avcodec_free_context(&_codec_ctx);
+    // av_frame_free(&_frame);
+    // av_frame_free(&_tmp_frame);
+    // av_packet_free(&_packet);
+    // sws_freeContext(_sws_ctx);
 
     avformat_free_context(_format_ctx);
 

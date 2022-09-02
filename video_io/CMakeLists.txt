@@ -21,3 +21,6 @@ target_compile_definitions(${TARGET_NAME} PUBLIC VIDEO_IO)
 target_include_directories(${TARGET_NAME} PUBLIC include)
 target_link_libraries(${TARGET_NAME} PRIVATE ffmpeg::ffmpeg)
 set_target_properties(${TARGET_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION} SOVERSION ${${PROJECT_NAME}_VERSION_MAJOR})
+
+add_executable(writer_example src/writer_example.cpp)
+target_link_libraries(writer_example PRIVATE ffmpeg::ffmpeg)

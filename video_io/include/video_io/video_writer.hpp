@@ -14,9 +14,7 @@ struct AVCodecContext;
 struct AVCodec;
 struct AVPacket;
 struct AVFrame;
-struct AVDictionary;
 struct SwsContext;
-struct AVBufferRef;
 struct AVStream;
 struct AVOutputFormat;
 
@@ -35,7 +33,8 @@ public:
 
     bool open(const std::string& video_path);
     bool is_opened() const;
-    bool write(uint8_t** data);
+    bool write(const uint8_t* data);
+    // bool write(uint8_t** data);
     bool write(raw_frame* frame);
     void release();
 

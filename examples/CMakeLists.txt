@@ -11,3 +11,5 @@ add_subdirectory(video_reader_opengl_player_multi_thread)
 
 add_subdirectory(video_reader_simple_decode)
 add_subdirectory(video_reader_simple_decode_multi_thread)
+
+add_subdirectory(video_writer_simple_encode)

@@ -358,13 +358,7 @@ int main(int argc, char **argv)
  
     av_log_set_level(0);
 
-    if (argc < 2)
-    {
-        printf("usage: %s output_file\n", argv[0]);
-        return 1;
-    }
- 
-    filename = argv[1];
+    filename = "out.mp4";
  
     /* allocate the output media context */
     avformat_alloc_output_context2(&oc, NULL, NULL, filename);

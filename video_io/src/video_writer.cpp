@@ -193,7 +193,7 @@ AVFrame* video_writer::alloc_frame(int pix_fmt, int width, int height)
 
 bool video_writer::encode(AVFrame* frame)
 {
-    int ret;
+    int ret = 0;
  
     if (auto r = avcodec_send_frame(_codec_ctx, frame); r < 0) 
     {

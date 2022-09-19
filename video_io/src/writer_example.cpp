@@ -5,6 +5,8 @@
 
 #define __STDC_CONSTANT_MACROS
 
+#include <iostream>
+
 extern "C"
 {
 #include <libavutil/avassert.h>
@@ -19,7 +21,7 @@ extern "C"
 }
  
 #define STREAM_DURATION   10.0
-#define STREAM_FRAME_RATE 25 /* 25 images/s */
+#define STREAM_FRAME_RATE 30 /* 25 images/s */
 #define STREAM_PIX_FMT    AV_PIX_FMT_YUV420P /* default pix_fmt */
  
 #define SCALE_FLAGS SWS_BICUBIC
@@ -143,8 +145,8 @@ static void add_stream(OutputStream *ost, AVFormatContext *oc, const AVCodec **c
  
         c->bit_rate = 400000;
         /* Resolution must be a multiple of two. */
-        c->width    = 352;
-        c->height   = 288;
+        c->width    = 640;
+        c->height   = 480;
         /* timebase: This is the fundamental unit of time (in seconds) in terms
          * of which frame timestamps are represented. For fixed-fps content,
          * timebase should be 1/framerate and timestamp increments should be
@@ -170,6 +172,9 @@ static void add_stream(OutputStream *ost, AVFormatContext *oc, const AVCodec **c
         break;
     }
  
+    ost->st->r_frame_rate = (AVRational){ STREAM_FRAME_RATE, 1 };
+    ost->st->avg_frame_rate = (AVRational){ STREAM_FRAME_RATE, 1 };
+
     /* Some formats want stream headers to be separate. */
     if (oc->oformat->flags & AVFMT_GLOBALHEADER)
         c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
@@ -280,7 +285,7 @@ static AVFrame *get_video_frame(OutputStream *ost)
     AVCodecContext *c = ost->enc;
  
     /* check if we want to generate more frames */
-    if (av_compare_ts(ost->next_pts, c->time_base, STREAM_DURATION, (AVRational){ 1, 1 }) > 0)
+    if (av_compare_ts(ost->next_pts, c->time_base, STREAM_DURATION, (AVRational){ 1, 1 }) >= 0)
         return NULL;
  
     /* when we pass a frame to the encoder, it may keep a reference to it
@@ -386,7 +391,7 @@ int main(int argc, char **argv)
      * video codecs and allocate the necessary encode buffers. */
     open_video(oc, video_codec, &video_st, opt);
  
-    av_dump_format(oc, 0, filename, 1);
+    // av_dump_format(oc, 0, filename, 1);
  
     /* open the output file, if needed */
     if (!(fmt->flags & AVFMT_NOFILE)) 
@@ -406,12 +411,17 @@ int main(int argc, char **argv)
         // fprintf(stderr, "Error occurred when opening output file: %s\n", av_err2str(ret));
         return 1;
     }
- 
+
+	size_t num_encoded_frames = 0;
     while (true)
     {
         if (!write_video_frame(oc, &video_st))
             break;
+
+        num_encoded_frames++;
     }
+
+	std::cout << "Encoded Frames: " << num_encoded_frames << std::endl;
  
     av_write_trailer(oc);
  

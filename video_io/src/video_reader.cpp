@@ -4,9 +4,6 @@
 #include "logger.hpp"
 #include "video_reader_hw.hpp"
 
-#include <thread>
-#include <chrono>
-
 extern "C"
 {
 #include <libavformat/avformat.h>
@@ -30,6 +27,27 @@ video_reader::video_reader() noexcept
 video_reader::~video_reader() noexcept
 {
     release();
+}
+
+
+void video_reader::init()
+{
+    log_info("Reset video capture");
+
+    _is_opened = false;
+    _decode_support = decode_support::none;
+    
+    _format_ctx = nullptr;
+    _codec_ctx = nullptr; 
+    _packet = nullptr;
+
+    _src_frame = nullptr;
+    _dst_frame = nullptr;
+    _tmp_frame = nullptr;
+
+    _sws_ctx = nullptr;
+    _options = nullptr;
+    _stream_index = -1;
 }
 
 // void video_reader::set_log_callback(const log_callback_t& cb, const log_level& level) { vc::logger::get().set_log_callback(cb, level); }
@@ -231,7 +249,7 @@ auto video_reader::get_fps() const -> std::optional<double>
     auto frame_rate = _format_ctx->streams[_stream_index]->avg_frame_rate;
     if(frame_rate.num <= 0 || frame_rate.den <= 0 )
     {
-        log_info("Unable to retrieve FPS.");
+        log_info("Unable to convert FPS.");
         return std::nullopt;
     }
 
@@ -251,7 +269,7 @@ bool video_reader::is_error(const char* func_name, const int error) const
     return true;    
 }
 
-bool video_reader::grab()
+bool video_reader::decode()
 {
     while(true)
     {
@@ -270,7 +288,7 @@ bool video_reader::grab()
 
         if (auto r = avcodec_send_packet(_codec_ctx, _packet); r < 0)
         {
-            if (AVERROR(EAGAIN) == r)                         
+            if (AVERROR(EAGAIN) == r)
                 continue; 
             
             if(is_error("avcodec_send_packet", r))
@@ -291,7 +309,7 @@ bool video_reader::grab()
     }
 }
 
-bool video_reader::decode()
+bool video_reader::copy_hw_frame()
 {
     if (_src_frame->format == _hw->hw_pixel_format)
     {
@@ -315,7 +333,7 @@ bool video_reader::decode()
     return true;
 }
 
-bool video_reader::retrieve()
+bool video_reader::convert()
 {
     if (!_sws_ctx)
     {
@@ -340,13 +358,14 @@ bool video_reader::retrieve()
 
 bool video_reader::read(uint8_t** data)
 {
-    if(!grab()) // decode
+    if(!decode())
         return false;
 
-    if(!decode()) // hw_accel
-        return false;
+    if(_decode_support == decode_support::HW)
+        if(!copy_hw_frame())
+            return false;
 
-    if(!retrieve()) // convert
+    if(!convert())
         return false;
 
     *data = _dst_frame->data[0];
@@ -355,14 +374,14 @@ bool video_reader::read(uint8_t** data)
 
 bool video_reader::read(raw_frame* frame)
 {
-    if(!grab())
-        return false;
-
     if(!decode())
         return false;
 
+    if(!copy_hw_frame())
+        return false;
+
     _dst_frame->data[0] = frame->data.data();
-    if(!retrieve())
+    if(!convert())
         return false;
 
     const auto time_base = _format_ctx->streams[_stream_index]->time_base;
@@ -407,26 +426,6 @@ void video_reader::release()
 
     init();
     _hw->release();
-}
-
-void video_reader::init()
-{
-    log_info("Reset video capture");
-
-    _is_opened = false;
-    _decode_support = decode_support::none;
-    
-    _format_ctx = nullptr;
-    _codec_ctx = nullptr; 
-    _packet = nullptr;
-
-    _src_frame = nullptr;
-    _dst_frame = nullptr;
-    _tmp_frame = nullptr;
-
-    _sws_ctx = nullptr;
-    _options = nullptr;
-    _stream_index = -1;
 }
 
 }

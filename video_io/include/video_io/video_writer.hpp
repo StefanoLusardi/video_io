@@ -16,7 +16,6 @@ struct AVPacket;
 struct AVFrame;
 struct SwsContext;
 struct AVStream;
-struct AVOutputFormat;
 
 namespace vc
 {
@@ -31,14 +30,12 @@ public:
     // using log_callback_t = std::function<void(const std::string&)>;
     // void set_log_callback(const log_callback_t& cb, const log_level& level = log_level::all);    
 
-    bool open(const std::string& video_path);
+    bool open(const std::string& video_path, int width, int height, const int fps, const int duration = -1);
     bool is_opened() const;
     bool write(const uint8_t* data);
-    // bool write(uint8_t** data);
     bool write(raw_frame* frame);
     void release();
-
-    void save();
+    bool save();
     
     // auto get_frame_count() const -> std::optional<int>;
     // auto get_duration() const -> std::optional<std::chrono::steady_clock::duration>;
@@ -48,32 +45,30 @@ public:
 
 protected:
     void init();
-    bool add_stream();
-    bool open_video();
-    AVFrame* alloc_picture(int pix_fmt, int width, int height);
-    bool write_frame();
+    // AVFrame* convert(const uint8_t* data);
+    bool convert(const uint8_t* data);
+    bool encode(AVFrame* frame);
+    bool flush();
+
     void close_stream();
 
-    // bool encode();
-    // bool convert();
+    AVFrame* alloc_frame(int pix_fmt, int width, int height);
 
 private:
     bool _is_opened;
     std::mutex _open_mutex;
 
-    int64_t next_pts;
-    AVStream* _stream;
-    
-    AVFrame* _frame;
-    AVFrame* _tmp_frame;
-
-    SwsContext* _sws_ctx;
-
-    const AVCodec* codec;
-    const AVOutputFormat *_output_format;
     AVFormatContext* _format_ctx;
     AVCodecContext* _codec_ctx;
     AVPacket* _packet;
+    SwsContext* _sws_ctx;
+
+    AVStream* _stream;
+    int64_t _stream_duration;
+    int64_t _next_pts;
+    
+    AVFrame* _frame;
+    AVFrame* _tmp_frame;
 };
 
 }

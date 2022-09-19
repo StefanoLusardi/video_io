@@ -37,42 +37,104 @@ static void get_frame_data(AVFrame *pict, int frame_index, int width, int height
 }
 */
 
-int main(int argc, char** argv)
+void record_n_frames(const char* format)
 {
-	// Create video_writer object and register library callback
-	vc::video_writer vw;
-	// vc.set_log_callback(log_callback, vc::log_level::all);
+    vc::video_writer vw;
 
-	const auto video_path = "out.mp4";
-	vw.open(video_path);
-	
-	// Set video info
-	const auto fps = 4;
-    // vw.set_fps(fps);
-
+    const int num_frames_to_write = 300;
+	const auto video_path = std::string("out_" + std::to_string(num_frames_to_write) + "_frames" + format);
+	const auto fps = 30;
 	const auto width = 640;
 	const auto height = 480;
-    // vw.set_frame_size(640, 480);
 
-	// Write video frame by frame
-	size_t num_encoded_frames = 0;
-	// uint8_t* frame_data = {};
+	vw.open(video_path, width, height, fps);
 
-	uint8_t frame_data[352 * 288 * 3] = { 0 };
+	uint8_t frame_data[width * height * 3] = { 0 };
 
-	while(num_encoded_frames < 300)
+	size_t num_written_frames = 0;
+	while(num_written_frames < num_frames_to_write)
 	{
-        vw.write(frame_data);
-        ++num_encoded_frames;
+        if (!vw.write(frame_data))
+            break;
+
+        num_written_frames++;
 	}
 
-	std::cout << "Decoded Frames: " << num_encoded_frames << std::endl;
-
-    // Save local video file
     vw.save();
 
-	// Release and cleanup video_writer
-	vw.release();
+    const float num_written_seconds = static_cast<float>(num_frames_to_write) / fps;
+	std::cout << video_path << "\n"
+        << " - Frames: " << num_frames_to_write << "\n"
+        << " - FPS: " << fps << "\n"
+        << " - Seconds = frames / fps = " << num_written_seconds  << "\n"
+        << std::endl;
+}
+
+void record_n_seconds(const char* format)
+{
+    vc::video_writer vw;
+
+    const int num_seconds_to_write = 10;
+	const auto video_path = std::string("out_" + std::to_string(num_seconds_to_write) + "_seconds" + format);
+	const auto fps = 30;
+	const auto width = 640;
+	const auto height = 480;
+
+	vw.open(video_path, width, height, fps, num_seconds_to_write);
+
+	uint8_t frame_data[width * height * 3] = { 0 };
+
+	size_t num_written_frames = 0;
+	while(true)
+	{
+        if (!vw.write(frame_data))
+            break;
+        
+        num_written_frames++;
+	}
+
+    vw.save();
+	
+    std::cout << video_path << "\n"
+        << " - Seconds: " << num_seconds_to_write << "\n"
+        << " - FPS: " << fps << "\n"
+        << " - Frames = seconds * fps = " << num_written_frames << "\n"
+        << std::endl;
+}
+
+int main(int argc, char** argv)
+{
+    auto formats = 
+    {
+        // ".mp4", 
+        ".mpg"
+        // ".avi"
+    };
+
+    for (auto format : formats)
+    {
+    	record_n_frames(format);
+        record_n_seconds(format);
+    }
 
 	return 0;
 }
+
+/*
+Check number of video frames:
+ffprobe -v 0 -select_streams v:0 -of csv=p=0 -show_entries stream=nb_read_frames -count_frames out.mp4
+
+Check FPS:
+ffprobe -v 0 -select_streams v:0 -of csv=p=0 -show_entries stream=r_frame_rate out.mp4
+
+Check FPS:
+ffprobe -v 0 -select_streams v:0 -of csv=p=0 -show_entries stream=avg_frame_rate out.mp4
+
+Duration:
+ffprobe -v 0 -select_streams v:0 -of csv=p=0 -show_entries stream=duration out.mp4
+
+
+ALL:
+ffprobe -v 0 -show_entries stream=nb_read_frames -count_frames -show_entries stream=r_frame_rate -show_entries stream=avg_frame_rate -show_entries stream=duration out.mp4
+
+*/

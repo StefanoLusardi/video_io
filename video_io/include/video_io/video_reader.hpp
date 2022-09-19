@@ -14,9 +14,8 @@ struct AVCodecContext;
 struct AVCodec;
 struct AVPacket;
 struct AVFrame;
-struct AVDictionary;
 struct SwsContext;
-struct AVBufferRef;
+struct AVDictionary;
 
 namespace vc
 {
@@ -45,11 +44,11 @@ public:
     auto get_fps() const -> std::optional<double>;
 
 protected:
-    void init();
-    bool grab();
-    bool decode();
-    bool retrieve();
     bool is_error(const char* func_name, const int error) const;
+    void init();
+    bool decode();
+    bool copy_hw_frame();
+    bool convert();
 
 private:
     bool _is_opened;
@@ -59,12 +58,12 @@ private:
     AVFormatContext* _format_ctx;
     AVCodecContext* _codec_ctx; 
     AVPacket* _packet;
+    SwsContext* _sws_ctx;
     
     AVFrame* _src_frame;
     AVFrame* _dst_frame;
     AVFrame* _tmp_frame;
     
-    SwsContext* _sws_ctx;
     AVDictionary* _options;
     int _stream_index;
 

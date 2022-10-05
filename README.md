@@ -5,10 +5,16 @@ video encoder and decoder, written in modern C++
 ---
 
 ## Prerequisites
+- C++17 compliant compiler
 - CMake
 - Python3
-- Ninja
-- MSVC (on Windows), GCC or Clang (on Linux/Mac)
+- Ninja (optional)
+
+## Supported configurations
+- Ubuntu 20.04: GCC 9
+- Ubuntu 22.04: GCC 10
+- Windows 10: MSVC 17 (Visual Studio 2022)
+- Windows 11: MSVC 17 (Visual Studio 2022)
 
 ## Setup Conan
 ```bash

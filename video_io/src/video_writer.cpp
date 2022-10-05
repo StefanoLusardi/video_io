@@ -48,13 +48,17 @@ void video_writer::init()
     _format_ctx = nullptr;
 }
 
-bool video_writer::open(const std::string& video_path, int width, int height, const int fps, const int duration)
+bool video_writer::open(const std::string& video_path, int width, int height, const int fps)
 {
+    if(width <= 0 || height <= 0 || fps <= 0)
+    {
+        log_error("open: invalid parameters:", "width:", width, "height:", height, "fps:", fps);
+        return false;
+    }
+
     std::lock_guard lock(_open_mutex);
 
     release();
-
-    _stream_duration = duration;
 
     log_info("Opening video path:", video_path, "width:", width, "height:", height, "fps:", fps);
 
@@ -164,6 +168,18 @@ bool video_writer::open(const std::string& video_path, int width, int height, co
     return true;
 }
 
+bool video_writer::open(const std::string& video_path, int width, int height, const int fps, const int duration)
+{
+    if(duration <= 0)
+    {
+        log_error("open: invalid duration:", "duration:", duration);
+        return false;
+    }
+    
+    _stream_duration = duration;
+    return open(video_path, width, height, fps);
+}
+
 bool video_writer::is_opened() const
 {
     return _is_opened;
@@ -193,71 +209,42 @@ AVFrame* video_writer::alloc_frame(int pix_fmt, int width, int height)
 
 bool video_writer::encode(AVFrame* frame)
 {
-    int ret = 0;
- 
     if (auto r = avcodec_send_frame(_codec_ctx, frame); r < 0) 
     {
         log_error("avcodec_send_frame", vc::logger::get().err2str(r));
         return false;
-    }
- 
-    while (ret >= 0) 
-    {
-        ret = avcodec_receive_packet(_codec_ctx, _packet);
-        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-            break;
+    }   
 
-        else if (ret < 0) 
+    while (true) 
+    {        
+        if (auto r = avcodec_receive_packet(_codec_ctx, _packet); r < 0)
         {
-            exit(1);
+            if(r == AVERROR(EAGAIN))
+                return true;
+
+            return false;
         }
  
         av_packet_rescale_ts(_packet, _codec_ctx->time_base, _stream->time_base);
         _packet->stream_index = _stream->index;
  
-        ret = av_interleaved_write_frame(_format_ctx, _packet);
-        if (ret < 0) 
+        // After the next line _packet is blank since av_interleaved_write_frame() takes ownership of its contents and resets it.
+        // Unreferencing is not necessary, i.e. no need to call av_packet_unref(_packet).
+        if (auto r = av_interleaved_write_frame(_format_ctx, _packet); r < 0)
         {
-            exit(1);
+            log_info("av_interleaved_write_frame", vc::logger::get().err2str(r));
+            return false;
         }
     }
- 
-    return ret != AVERROR_EOF;
 
-
-    
-    // while (true) 
-    // {        
-    //     if (auto r = avcodec_receive_packet(_codec_ctx, _packet); r < 0)
-    //     {
-    //         if(r == AVERROR(EAGAIN)) // || r == AVERROR_EOF)
-    //             return true;
-
-    //         return false;
-    //     }
- 
-    //     av_packet_rescale_ts(_packet, _codec_ctx->time_base, _stream->time_base);
-    //     _packet->stream_index = _stream->index;
- 
-    //     if (auto r = av_interleaved_write_frame(_format_ctx, _packet); r < 0)
-    //     {
-    //         log_info("av_interleaved_write_frame", vc::logger::get().err2str(r));
-    //         return false;
-    //     }
-    //     // _packet is now blank since av_interleaved_write_frame() takes ownership of its contents and resets _packet
-    //     // unreferencing is not necessary i.e. no need to call av_packet_unref(_packet)
-    // }
-
-    // return true;
+    return true;
 }
 
-// AVFrame* video_writer::convert(const uint8_t* data)
 bool video_writer::convert(const uint8_t* data)
 {
     if (_stream_duration > 0 && av_compare_ts(_next_pts, _codec_ctx->time_base, _stream_duration, AVRational{ 1, 1 }) >= 0)
     {
-        log_info("End of stream");
-        // return nullptr;
+        log_info("End of stream. Flush remaining packets.");
         encode(nullptr);
         return false;
     }
@@ -266,44 +253,73 @@ bool video_writer::convert(const uint8_t* data)
     if (auto r = av_frame_make_writable(_frame); r < 0)
     {
         log_error("av_frame_make_writable", vc::logger::get().err2str(r));
-        // return nullptr;
         return false;
     }
 
-    /* Y */
-    for (int y = 0; y < _codec_ctx->height; y++)
-    {
-        for (int x = 0; x < _codec_ctx->width; x++)
-        {
-            _frame->data[0][y * _frame->linesize[0] + x] = static_cast<uint8_t>((float)_next_pts/300*255);
-        }
-    }
- 
-    /* Cb and Cr */
-    for (int y = 0; y < _codec_ctx->height / 2; y++)
-    {
-        for (int x = 0; x < _codec_ctx->width / 2; x++)
-        {
-            _frame->data[1][y * _frame->linesize[1] + x] = 127;
-            _frame->data[2][y * _frame->linesize[2] + x] = 0;
-        }
-    }
-
-    // if (auto r = av_image_fill_arrays(_frame->data, _frame->linesize, data, _codec_ctx->pix_fmt, _codec_ctx->width, _codec_ctx->height, 1); r < 0)
+    // /* Y */
+    // for (int y = 0; y < _codec_ctx->height; y++)
     // {
-    //     log_error("av_image_fill_arrays", vc::logger::get().err2str(r));
-    //     return nullptr;  
-    //     // return false;  
+    //     for (int x = 0; x < _codec_ctx->width; x++)
+    //     {
+    //         _frame->data[0][y * _frame->linesize[0] + x] = static_cast<uint8_t>(x);
+    //     }
     // }
+
+    // /* Cb and Cr */
+    // for (int y = 0; y < _codec_ctx->height / 2; y++)
+    // {
+    //     for (int x = 0; x < _codec_ctx->width / 2; x++)
+    //     {
+    //         _frame->data[1][y * _frame->linesize[1] + x] = _next_pts;
+    //         _frame->data[2][y * _frame->linesize[2] + x] = 0;
+    //     }
+    // }
+
+    if (_codec_ctx->pix_fmt != AV_PIX_FMT_YUV420P)
+    {
+        // as we only generate a YUV420P picture, we must convert it to the codec pixel format if needed 
+        if (!_sws_ctx) 
+        {
+            _sws_ctx = sws_getContext(
+                _codec_ctx->width, _codec_ctx->height, AVPixelFormat::AV_PIX_FMT_YUV420P,
+                _codec_ctx->width, _codec_ctx->height, _codec_ctx->pix_fmt, 
+                SWS_BICUBIC, nullptr, nullptr, nullptr);
+            
+            if (!_sws_ctx)
+            {
+                log_error("Unable to initialize SwsContext");
+                return false;
+            }
+        }
+
+        if (auto r = av_image_fill_arrays(_tmp_frame->data, _tmp_frame->linesize, data, _codec_ctx->pix_fmt, _codec_ctx->width, _codec_ctx->height, 1); r < 0)
+        {
+            log_error("av_image_fill_arrays", vc::logger::get().err2str(r));
+            return false;
+        }
+
+        sws_scale(_sws_ctx, (const uint8_t * const *)_tmp_frame->data, _tmp_frame->linesize, 
+            0, _codec_ctx->height, _frame->data, _frame->linesize);
+    }
+    else 
+    {
+        if (auto r = av_image_fill_arrays(_frame->data, _frame->linesize, data, _codec_ctx->pix_fmt, _codec_ctx->width, _codec_ctx->height, 1); r < 0)
+        {
+            log_error("av_image_fill_arrays", vc::logger::get().err2str(r));
+            return false;
+        }
+    }
     
     _frame->pts = _next_pts++; // Timestamp increment must be 1 for fixed-fps content
     
-    // return _frame;
     return true;
 }
 
 bool video_writer::write(const uint8_t* data)
 {
+    if(!_is_opened)
+        return false;
+        
     if(!convert(data))
         return false;
 
@@ -321,11 +337,6 @@ bool video_writer::write(raw_frame* frame)
     // if(!encode())
     //     return false;
 
-    return true;
-}
-
-bool video_writer::flush()
-{
     return true;
 }
 
@@ -351,15 +362,13 @@ bool video_writer::save()
         }
     }
 
-    release();
-
-    return true;
+    return release();
 }
 
-void video_writer::release()
+bool video_writer::release()
 {
     if(!_is_opened)
-        return;
+        return false;
     
     if(_codec_ctx)
         avcodec_free_context(&_codec_ctx);
@@ -380,99 +389,62 @@ void video_writer::release()
         avformat_free_context(_format_ctx);
 
     init();
+    return true;
 }
 
-
-/*
-bool video_writer::encode()
+bool video_writer::check(const std::string& video_path)
 {
-    int ret;
- 
-    // send the frame to the encoder
-    ret = avcodec_send_frame(_codec_ctx, _frame);
-    if (ret < 0) 
+    AVFormatContext* fmt_ctx;
+
+    if (fmt_ctx = avformat_alloc_context(); !fmt_ctx)
     {
-        // fprintf(stderr, "Error sending a frame to the encoder: %s\n", av_err2str(ret));
+        log_error("avformat_alloc_context");
         return false;
     }
 
-    while (ret >= 0) 
+    if (auto r = avformat_open_input(&fmt_ctx, video_path.c_str(), nullptr, nullptr); r < 0)
     {
-        ret = avcodec_receive_packet(_codec_ctx, _packet);
-        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-            break;
-
-        else if (ret < 0) 
-        {
-            // fprintf(stderr, "Error encoding a frame: %s\n", av_err2str(ret));
-            return false;
-        }
-
-        // rescale output packet timestamp values from codec to stream timebase
-        av_packet_rescale_ts(_packet, _codec_ctx->time_base, _stream->time_base);
-        _packet->stream_index = _stream->index;
- 
-        // Write the compressed frame to the media file.
-        ret = av_interleaved_write_frame(_format_ctx, _packet);
-
-        // _packet is now blank (av_interleaved_write_frame() takes ownership of
-        // its contents and resets _packet), so that no unreferencing is necessary.
-        // This would be different if one used av_write_frame().
-        if (ret < 0) 
-        {
-            // fprintf(stderr, "Error while writing output packet: %s\n", av_err2str(ret));
-            return false;
-        }
+        log_error("avformat_open_input", vc::logger::get().err2str(r));
+        return false;
     }
- 
-    return ret != AVERROR_EOF;
-}
-*/
- 
-}
 
-/*
-static AVFrame *get_video_frame(OutputStream *ost)
-{
-    AVCodecContext *c = ost->enc;
- 
-    // check if we want to generate more frames
-    if (av_compare_ts(ost->_next_pts, c->time_base, STREAM_DURATION, (AVRational){ 1, 1 }) > 0)
-        return NULL;
- 
-    // when we pass a frame to the encoder, it may keep a reference to it internally; make sure we do not overwrite it here 
-    if (av_frame_make_writable(ost->frame) < 0)
-        exit(1);
- 
-    if (c->pix_fmt != AV_PIX_FMT_YUV420P)
+    if (auto r = avformat_find_stream_info(fmt_ctx, nullptr); r < 0)
     {
-        // as we only generate a YUV420P picture, we must convert it to the codec pixel format if needed 
-        if (!ost->sws_ctx) 
-        {
-            ost->sws_ctx = sws_getContext(
-                c->width, c->height, AV_PIX_FMT_YUV420P,
-                c->width, c->height, c->pix_fmt, SWS_BICUBIC, 
-                NULL, NULL, NULL);
-
-            if (!ost->sws_ctx) 
-            {
-                fprintf(stderr, "Could not initialize the conversion context\n");
-                exit(1);
-            }
-        }
-
-        fill_yuv_image(ost->tmp_frame, ost->_next_pts, c->width, c->height);
-
-        sws_scale(ost->sws_ctx, (const uint8_t * const *) ost->tmp_frame->data,
-            ost->tmp_frame->linesize, 0, c->height, ost->frame->data, ost->frame->linesize);
+        log_error("avformat_find_stream_info", vc::logger::get().err2str(r));
+        return false;
     }
-    else 
+
+    const AVCodec* codec = nullptr;
+    int stream_index = av_find_best_stream(fmt_ctx, AVMediaType::AVMEDIA_TYPE_VIDEO, -1, -1, &codec, 0); 
+    if (stream_index < 0)
     {
-        fill_yuv_image(ost->frame, ost->_next_pts, c->width, c->height);
+        log_error("av_find_best_stream", vc::logger::get().err2str(stream_index));
+        return false;
     }
- 
-    ost->frame->pts = ost->_next_pts++;
- 
-    return ost->frame;
+
+    AVStream* stream = fmt_ctx->streams[stream_index];
+    stream->nb_frames;
+    stream->r_frame_rate;
+    stream->avg_frame_rate;
+    stream->duration;
+    stream->id;
+
+    stream->codecpar->width;
+    stream->codecpar->height;
+    stream->codecpar->codec_id;
+
+    codec->name;
+    codec->long_name;
+
+    (AVPixelFormat)stream->codecpar->format;
+
+    if(fmt_ctx)
+    {
+        avformat_close_input(&_format_ctx);
+        avformat_free_context(_format_ctx);
+    }
+
+    return true;
 }
-*/
+
+}

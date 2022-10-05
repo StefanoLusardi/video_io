@@ -14,6 +14,7 @@ add_library(${TARGET_NAME} STATIC
     src/video_writer.cpp
 )
 
+set(WINDOWS_EXPORT_ALL_SYMBOLS ON)
 find_package(ffmpeg)
 
 target_compile_features(${TARGET_NAME} PUBLIC cxx_std_17)

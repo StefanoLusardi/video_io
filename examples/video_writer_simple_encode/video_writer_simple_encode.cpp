@@ -7,6 +7,8 @@
 */
 
 #include <iostream>
+#include <algorithm>
+#include <array>
 #include <video_io/video_writer.hpp>
 
 // void log_callback(const std::string& str) { std::cout << "[::video_writer::] " << str << std::endl; }
@@ -49,18 +51,22 @@ void record_n_frames(const char* format)
 
 	vw.open(video_path, width, height, fps);
 
-	uint8_t frame_data[width * height * 3] = { 0 };
+    const auto frame_size = width * height * 3;
+    std::array<uint8_t, frame_size> frame_data = { };
 
 	size_t num_written_frames = 0;
 	while(num_written_frames < num_frames_to_write)
 	{
-        if (!vw.write(frame_data))
+        frame_data.fill(static_cast<uint8_t>(num_written_frames));
+        if (!vw.write(frame_data.data()))
             break;
 
         num_written_frames++;
 	}
 
     vw.save();
+
+    vw.check(video_path);
 
     const float num_written_seconds = static_cast<float>(num_frames_to_write) / fps;
 	std::cout << video_path << "\n"
@@ -82,12 +88,14 @@ void record_n_seconds(const char* format)
 
 	vw.open(video_path, width, height, fps, num_seconds_to_write);
 
-	uint8_t frame_data[width * height * 3] = { 0 };
+    const auto frame_size = width * height * 3;
+    std::array<uint8_t, frame_size> frame_data = { };
 
 	size_t num_written_frames = 0;
 	while(true)
 	{
-        if (!vw.write(frame_data))
+        frame_data.fill(static_cast<uint8_t>(num_written_frames));
+        if (!vw.write(frame_data.data()))
             break;
         
         num_written_frames++;
@@ -104,16 +112,16 @@ void record_n_seconds(const char* format)
 
 int main(int argc, char** argv)
 {
-    auto formats = 
+    std::vector<const char *> formats =
     {
-        // ".mp4", 
-        ".mpg"
-        // ".avi"
+        ".wat",
+        // ".mpg",
+        // ".avi",
     };
 
     for (auto format : formats)
     {
-    	record_n_frames(format);
+        record_n_frames(format);
         record_n_seconds(format);
     }
 

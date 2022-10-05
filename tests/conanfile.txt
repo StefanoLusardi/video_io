@@ -1,5 +1,5 @@
 [requires]
-ffmpeg/5.0
+gtest/1.12.1
 
 [generators]
 cmake_find_package

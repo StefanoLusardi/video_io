@@ -14,7 +14,7 @@ include(GNUInstallDirs)
 
 # option(VIDEO_IO_BUILD_SHARED "Build shared library" ON)
 option(VIDEO_IO_BUILD_TESTS "Build library unit tests" ON)
-option(VIDEO_IO_BUILD_EXAMPLES "Build library examples" ON)
+option(VIDEO_IO_BUILD_EXAMPLES "Build library examples" OFF)
 option(VIDEO_IO_BUILD_SANITIZERS "Build with sanitizers (address, undefined, memory, thread)" OFF)
 option(VIDEO_IO_BUILD_BENCHMARKS "Build library benchmarks" OFF)
 option(VIDEO_IO_BUILD_DOCS "Build documentation using Doxygen" OFF)

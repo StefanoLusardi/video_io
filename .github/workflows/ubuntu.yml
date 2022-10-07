@@ -41,7 +41,7 @@ jobs:
     
         export CONAN_SYSREQUIRES_SUDO=1
         export CONAN_SYSREQUIRES_MODE=enabled
-        export DEBIAN_FRONTEND=noninteractive
+        # export DEBIAN_FRONTEND=noninteractive
         
         conan profile show default
         conan install . \

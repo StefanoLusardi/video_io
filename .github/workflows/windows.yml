@@ -10,13 +10,11 @@ jobs:
     
     strategy:
       matrix:
-        os: [windows-2022] #, windows-2019]
+        os: [windows-2019] #, windows-2022]
         build_type: ["Debug"] #, "Release"]
         generator: ["Ninja"] #, "Visual Studio 17 2022"]
 
     env:
-      CC: cl
-      CXX: cl
       BUILD_DIR: ${{github.workspace}}/build/${{matrix.build_type}}
 
     steps:
@@ -32,14 +30,14 @@ jobs:
         conan profile new default --detect 
         conan profile update settings.compiler="Visual Studio" default
         conan profile update settings.compiler.version=17 default
-        # conan profile update settings.compiler.libcxx=libstdc++11 default
-
-        # export CONAN_SYSREQUIRES_SUDO=0
-        # export CONAN_SYSREQUIRES_MODE=enabled
-        # export DEBIAN_FRONTEND=noninteractive
         
         conan profile show default
-        conan install . -c tools.system.package_manager:mode=install --install-folder ${{env.BUILD_DIR}}/modules --settings build_type=${{matrix.build_type}} --build missing --update
+        conan install . `
+          -c tools.system.package_manager:mode=install `
+          --install-folder ${{env.BUILD_DIR}}/modules `
+          --settings build_type=${{matrix.build_type}} `
+          --build missing `
+          --update
 
     - name: Configure
       run: |

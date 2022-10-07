@@ -26,6 +26,12 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install ninja-build
+        
+    - name: Install Conan
+      run: |
+        pip install conan
+        ./scripts/conan_install.sh ${{matrix.build_type}} gcc 10
+        
     - name: Configure
       run: |
         echo Configure

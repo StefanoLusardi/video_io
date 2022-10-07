@@ -16,6 +16,8 @@ jobs:
 
     env:
       BUILD_DIR: ${{github.workspace}}/build/${{matrix.build_type}}
+      CC: cl
+      CXX: cl
 
     steps:
     - uses: actions/checkout@v3

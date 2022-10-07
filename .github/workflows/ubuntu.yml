@@ -30,12 +30,28 @@ jobs:
     - name: Install Conan
       run: |
         pip install conan
-        ./scripts/conan_install.sh ${{matrix.build_type}} gcc 10
+        conan profile new default --detect 
+        conan profile update settings.compiler=${C_COMPILER} default
+        conan profile update settings.compiler.version=${COMPILER_VERSION} default
+        conan profile update settings.compiler.libcxx=libstdc++11 default
+    
+        export CONAN_SYSREQUIRES_SUDO=0
+        export CONAN_SYSREQUIRES_MODE=enabled
+        export DEBIAN_FRONTEND=noninteractive
+        
+        conan install . \
+          -c tools.system.package_manager:mode=install \
+          --install-folder ${{env.BUILD_DIR}}/modules \
+          --settings build_type=${{matrix.build_type}}\
+          --settings compiler=gcc \
+          --settings compiler.version=10 \
+          --build missing \
+          --update
         
     - name: Configure
       run: |
         echo Configure
-        cmake -S . -B ${{env.BUILD_DIR}} -G ${{matrix.generator}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        cmake -S . -B ${{env.BUILD_DIR}} -G ${{matrix.generator}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DVIDEO_IO_BUILD_TESTS=OFF
     - name: Build
       run: |
         echo Build

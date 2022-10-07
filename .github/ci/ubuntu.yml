@@ -1,0 +1,41 @@
+name: Ubuntu
+
+on: [push, pull_request]
+
+jobs:
+  build:
+  
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest] #, ubuntu-18.04]
+        build_type: ["Debug"] #, "Release"]
+        generator: ["Ninja"] #, "Unix Makefiles"]
+
+    env:
+      CC: gcc-10
+      CXX: g++-10
+      BUILD_DIR: ${{github.workspace}}/build/${{matrix.build_type}}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Ninja
+      run: |
+        sudo apt-get update
+        sudo apt-get install ninja-build
+    - name: Configure
+      run: |
+        echo Configure
+        cmake -S . -B ${{env.BUILD_DIR}} -G ${{matrix.generator}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+    - name: Build
+      run: |
+        echo Build
+        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: |
+        echo Test
+        ctest --test-dir ./build/${BUILD_TYPE} --config ${BUILD_TYPE} --output-junit results.xml --output-on-failure -j$(nproc)

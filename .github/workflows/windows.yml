@@ -47,10 +47,10 @@ jobs:
     - name: Build
       run: |
         echo Build
-        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
     
     - name: Test
       working-directory: ${{github.workspace}}/build
       run: |
         echo Test
-        ctest --test-dir ./build/${BUILD_TYPE} --config ${BUILD_TYPE} --output-junit results.xml --output-on-failure -j$(nproc)
+        ctest --test-dir ${{env.BUILD_DIR}} --config ${matrix.build_type} --output-junit results.xml --output-on-failure -j$(nproc)

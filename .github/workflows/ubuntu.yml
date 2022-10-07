@@ -35,7 +35,7 @@ jobs:
         conan profile update settings.compiler.version=10 default
         conan profile update settings.compiler.libcxx=libstdc++11 default
     
-        export CONAN_SYSREQUIRES_SUDO=0
+        export CONAN_SYSREQUIRES_SUDO=1
         export CONAN_SYSREQUIRES_MODE=enabled
         export DEBIAN_FRONTEND=noninteractive
         

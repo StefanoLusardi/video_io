@@ -1,4 +1,4 @@
-name: ubuntu
+name: windows
 
 on: [push, pull_request]
 
@@ -10,13 +10,13 @@ jobs:
     
     strategy:
       matrix:
-        os: [ubuntu-22.04] #, ubuntu-20.04]
+        os: [windows-2022] #, windows-2019]
         build_type: ["Debug"] #, "Release"]
-        generator: ["Ninja"] #, "Unix Makefiles"]
+        generator: ["Ninja"] #, "Visual Studio 17 2022"]
 
     env:
-      CC: gcc-10
-      CXX: g++-10
+      CC: cl
+      CXX: cl
       BUILD_DIR: ${{github.workspace}}/build/${{matrix.build_type}}
 
     steps:
@@ -24,34 +24,31 @@ jobs:
 
     - name: Install Ninja
       run: |
-        sudo apt-get update
-        sudo apt-get install ninja-build
-        
+        choco install --accept-license -y Ninja
+
     - name: Install Conan
       run: |
         pip install conan
         conan profile new default --detect 
-        conan profile update settings.compiler=gcc default
-        conan profile update settings.compiler.version=10 default
-        conan profile update settings.compiler.libcxx=libstdc++11 default
+      # conan profile update settings.compiler=gcc default
+      # conan profile update settings.compiler.version=10 default
+      # conan profile update settings.compiler.libcxx=libstdc++11 default
     
-        export CONAN_SYSREQUIRES_SUDO=0
-        export CONAN_SYSREQUIRES_MODE=enabled
-        export DEBIAN_FRONTEND=noninteractive
+      # export CONAN_SYSREQUIRES_SUDO=0
+      # export CONAN_SYSREQUIRES_MODE=enabled
+      # export DEBIAN_FRONTEND=noninteractive
         
         conan install . \
           -c tools.system.package_manager:mode=install \
           --install-folder ${{env.BUILD_DIR}}/modules \
           --settings build_type=${{matrix.build_type}}\
-          --settings compiler=gcc \
-          --settings compiler.version=10 \
           --build missing \
           --update
-        
+
     - name: Configure
       run: |
         echo Configure
-        cmake -S . -B ${{env.BUILD_DIR}} -G ${{matrix.generator}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DVIDEO_IO_BUILD_TESTS=OFF
+        cmake -S . -B ${{env.BUILD_DIR}} -G ${{matrix.generator}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
     
     - name: Build
       run: |

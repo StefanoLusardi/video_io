@@ -42,7 +42,7 @@ jobs:
     - name: Configure
       run: |
         echo Configure
-        cmake -S . -B ${{env.BUILD_DIR}} -G ${{matrix.generator}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        cmake -S . -B ${{env.BUILD_DIR}} -G ${{matrix.generator}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DVIDEO_IO_BUILD_TESTS=OFF
     
     - name: Build
       run: |

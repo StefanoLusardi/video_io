@@ -8,7 +8,7 @@
 namespace vc::test
 {
 
-class video_writer_test : public ::testing::Test
+class video_writer_test :  public ::testing::TestWithParam<std::string>
 {
 protected:
     explicit video_writer_test()
@@ -45,8 +45,6 @@ private:
     {
         ((std::cout << std::forward<Args>(args) << ' ') , ...) << std::endl;
     }
-
-
 };
 
 }

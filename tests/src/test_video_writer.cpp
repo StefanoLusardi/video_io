@@ -172,11 +172,10 @@ TEST_F(video_writer_test, open_three_different_paths)
     ASSERT_TRUE(v->is_opened());
 }
 
-TEST_F(video_writer_test, write_n_frames)
+TEST_P(video_writer_test, write_n_frames)
 {
-    // Parametrize on different formats
-    // Use test name as video name
-    const auto video_path = test_data_directory + "out.mp4";
+    const std::string format = GetParam();
+    const auto video_path = test_data_directory + "out" + format;
 
     ASSERT_TRUE(v->open(video_path, width, height, fps));
     ASSERT_TRUE(v->is_opened());
@@ -197,12 +196,10 @@ TEST_F(video_writer_test, write_n_frames)
     // Check video info
 }
 
-TEST_F(video_writer_test, write_n_seconds)
+TEST_P(video_writer_test, write_n_seconds)
 {
-    // Parametrize on different formats
-    // Use test name as video name
-
-    const auto video_path = test_data_directory + "out.mp4";
+    const std::string format = GetParam();
+    const auto video_path = test_data_directory + "out" + format;
 
     const int duration_to_write_in_seconds = 10;
     ASSERT_TRUE(v->open(video_path, width, height, fps, duration_to_write_in_seconds));
@@ -224,6 +221,8 @@ TEST_F(video_writer_test, write_n_seconds)
 
     // Check video info
 }
+
+INSTANTIATE_TEST_SUITE_P(multi_format, video_writer_test, ::testing::Values(".mp4", ".mpeg", ".avi"));
 
 /* 
 TODO:

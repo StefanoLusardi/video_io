@@ -1,12 +1,12 @@
 #include "test_video_writer.hpp"
-#include <gtest/gtest.h>
 
 namespace vc::test
 {
 
 TEST_F(video_writer_test, open_without_duration)
 {
-    const auto video_path = test_data_directory + "out.mp4";
+    // use filesystem path instead of string.
+    const auto video_path = test_data_directory + test_name + ".mp4";
     ASSERT_TRUE(v->open(video_path, width, height, fps));
 }
 

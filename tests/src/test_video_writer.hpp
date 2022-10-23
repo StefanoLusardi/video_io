@@ -14,6 +14,7 @@ protected:
     explicit video_writer_test()
     : v{ std::make_unique<vc::video_writer>() }
     , test_data_directory{""}
+    , test_name { testing::UnitTest::GetInstance()->current_test_info()->name() }
     {         
         frame_data.fill(static_cast<uint8_t>(0));
     }
@@ -25,6 +26,7 @@ protected:
 
     std::unique_ptr<vc::video_writer> v;
     const std::string test_data_directory;
+    const std::string test_name;
 
     static const int fps = 30;
     static const int width = 640;

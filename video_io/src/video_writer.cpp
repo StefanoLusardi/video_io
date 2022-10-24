@@ -57,7 +57,6 @@ bool video_writer::open(const std::string& video_path, int width, int height, co
     }
 
     std::lock_guard lock(_open_mutex);
-
     release();
 
     log_info("Opening video path:", video_path, "width:", width, "height:", height, "fps:", fps);
@@ -95,6 +94,7 @@ bool video_writer::open(const std::string& video_path, int width, int height, co
         log_error("avcodec_alloc_context3");
         return false;
     }
+
     _codec_ctx->codec_id = codec->id;
     _codec_ctx->bit_rate = 400000;
     _codec_ctx->width = width - (width % 2); // Keep sizes a multiple of 2
@@ -124,7 +124,7 @@ bool video_writer::open(const std::string& video_path, int width, int height, co
 
     if (_packet = av_packet_alloc(); !_packet)
     {
-        log_error("av_packet_alloc", vc::logger::get().err2str(r));
+        log_error("av_packet_alloc");
         return false;
     }
 
@@ -165,6 +165,7 @@ bool video_writer::open(const std::string& video_path, int width, int height, co
     }
 
     _is_opened = true;
+    log_info("Video Writer is opened correctly");
     return true;
 }
 
@@ -215,7 +216,7 @@ bool video_writer::encode(AVFrame* frame)
         return false;
     }   
 
-    while (true) 
+    while (true)
     {        
         if (auto r = avcodec_receive_packet(_codec_ctx, _packet); r < 0)
         {
@@ -331,13 +332,16 @@ bool video_writer::write(const uint8_t* data)
 
 bool video_writer::write(raw_frame* frame)
 {
+    if(!_is_opened)
+        return false;
+    
     // if(!convert(frame))
     //     return false;
 
     // if(!encode())
     //     return false;
 
-    return true;
+    return false;
 }
 
 bool video_writer::save()
@@ -370,6 +374,8 @@ bool video_writer::release()
     if(!_is_opened)
         return false;
     
+    log_info("Release video writer");
+
     if(_codec_ctx)
         avcodec_free_context(&_codec_ctx);
 

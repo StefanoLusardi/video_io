@@ -35,7 +35,7 @@ public:
     bool is_opened() const;
     bool read(uint8_t** data);
     bool read(raw_frame* frame);
-    void release();
+    bool release();
     
     auto get_frame_count() const -> std::optional<int>;
     auto get_duration() const -> std::optional<std::chrono::steady_clock::duration>;

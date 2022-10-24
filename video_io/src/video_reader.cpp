@@ -55,7 +55,6 @@ void video_reader::init()
 bool video_reader::open(const std::string& video_path, decode_support decode_preference)
 {
     std::lock_guard lock(_open_mutex);
-    
     release();
 
     log_info("Opening video path:", video_path);
@@ -165,14 +164,7 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
     }
 
     _is_opened = true;
-    log_info("Opened video path:", video_path);
-    log_info("Frame Width:", _codec_ctx->width, "px");
-    log_info("Frame Height:", _codec_ctx->height, "px");
-    log_info("Frame Rate:", (get_fps() != std::nullopt ? get_fps().value() : -1), "fps");
-    log_info("Duration:", (get_duration() != std::nullopt ? std::chrono::duration_cast<std::chrono::seconds>(get_duration().value()).count() : -1), "sec");
-    log_info("Number of frames:", (get_frame_count() != std::nullopt ? get_frame_count().value() : -1));
-    log_info("Video Capture is initialized");
-
+    log_info("Video Reader is opened correctly");
     return true;
 }
 
@@ -358,6 +350,9 @@ bool video_reader::convert()
 
 bool video_reader::read(uint8_t** data)
 {
+    if(!_is_opened)
+        return false;
+
     if(!decode())
         return false;
 
@@ -390,12 +385,12 @@ bool video_reader::read(raw_frame* frame)
     return true;
 }
 
-void video_reader::release()
+bool video_reader::release()
 {
     if(!_is_opened)
-        return;
+        return false;
 
-    log_info("Release video capture");
+    log_info("Release video reader");
 
     if(_sws_ctx)
         sws_freeContext(_sws_ctx);
@@ -426,6 +421,7 @@ void video_reader::release()
 
     init();
     _hw->release();
+    return true;
 }
 
 }

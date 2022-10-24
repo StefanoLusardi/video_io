@@ -2,7 +2,9 @@ set(TARGET_NAME video_io_tests)
 
 add_executable(${TARGET_NAME}
     src/main.cpp
+    src/test_video_reader.hpp
     src/test_video_reader.cpp
+    src/test_video_writer.hpp
     src/test_video_writer.cpp
 )
 

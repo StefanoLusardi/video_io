@@ -15,13 +15,13 @@ void log_callback(const std::string& str) { std::cout << "[::video_reader::] " <
 int main(int argc, char** argv)
 {
 	// Create video_reader object and register library callback
-	vc::video_reader vc;
-	vc.set_log_callback(log_callback, vc::log_level::all);
+	vio::video_reader vc;
+	// vc.set_log_callback(log_callback, vio::log_level::all);
 
 	// Open video (local file, RTSP, ...)
-	const auto video_path = "../../../tests/data/testsrc_10sec_30fps.mkv";
+	const auto video_path = "../../../../tests/data/testsrc_10sec_30fps.mkv";
 	// const auto video_path = "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_175k.mov";
-	vc.open(video_path, vc::decode_support::HW);
+	vc.open(video_path);//, vio::decode_support::HW);
 	
 	// Retrieve video info
 	const auto fps = vc.get_fps();

@@ -60,13 +60,13 @@ public:
     using Benchmark::Benchmark;
 
 protected:
-	vc::video_reader _vc;
+	vio::video_reader _vc;
 	uint8_t* _data = {};
 
     void Initialize(CppBenchmark::Context& context) override
 	{
 		int param = context.x();
-		const vc::decode_support decode_support = static_cast<vc::decode_support>(param);
+		const vio::decode_support decode_support = static_cast<vio::decode_support>(param);
 		
 		if(!_vc.open(video_path, decode_support))
 		{
@@ -77,7 +77,7 @@ protected:
 
 		if(!_vc.is_opened())
 		{
-			std::cout << "vc::video_reader is not opened" << std::endl;
+			std::cout << "vio::video_reader is not opened" << std::endl;
 			context.Cancel();
 			return;
 		}
@@ -102,13 +102,13 @@ public:
     using Benchmark::Benchmark;
 
 protected:
-	vc::video_reader _vc;
-	vc::raw_frame _frame;
+	vio::video_reader _vc;
+	vio::raw_frame _frame;
 
     void Initialize(CppBenchmark::Context& context) override
 	{
 		int param = context.x();
-		const vc::decode_support decode_support = static_cast<vc::decode_support>(param);
+		const vio::decode_support decode_support = static_cast<vio::decode_support>(param);
 		
 		if(!_vc.open(video_path, decode_support))
 		{
@@ -119,7 +119,7 @@ protected:
 
 		if(!_vc.is_opened())
 		{
-			std::cout << "vc::video_reader is not opened" << std::endl;
+			std::cout << "vio::video_reader is not opened" << std::endl;
 			context.Cancel();
 			return;
 		}
@@ -145,11 +145,11 @@ const auto operations = 1;
 
 BENCHMARK_CLASS(VideoCaptureFixture_RawData,
 	"VideoCaptureFixture.RawData.SW",
-	Settings().Attempts(attempts).Operations(operations).Param(static_cast<int>(vc::decode_support::SW)))
+	Settings().Attempts(attempts).Operations(operations).Param(static_cast<int>(vio::decode_support::SW)))
 
 BENCHMARK_CLASS(VideoCaptureFixture_RawFrame,
 	"VideoCaptureFixture.RawFrame.SW", 
-	Settings().Attempts(attempts).Operations(operations).Param(static_cast<int>(vc::decode_support::SW)))
+	Settings().Attempts(attempts).Operations(operations).Param(static_cast<int>(vio::decode_support::SW)))
 
 // BENCHMARK_CLASS(VideoCaptureFixture_OpenCV,		
 // 	"VideoCaptureFixture.OpenCV",
@@ -157,11 +157,11 @@ BENCHMARK_CLASS(VideoCaptureFixture_RawFrame,
 
 BENCHMARK_CLASS(VideoCaptureFixture_RawData,
 	"VideoCaptureFixture.RawData.HW",
-	Settings().Attempts(attempts).Operations(operations).Param(static_cast<int>(vc::decode_support::HW)))
+	Settings().Attempts(attempts).Operations(operations).Param(static_cast<int>(vio::decode_support::HW)))
 
 BENCHMARK_CLASS(VideoCaptureFixture_RawFrame,
 	"VideoCaptureFixture.RawFrame.HW", 
-	Settings().Attempts(attempts).Operations(operations).Param(static_cast<int>(vc::decode_support::HW)))
+	Settings().Attempts(attempts).Operations(operations).Param(static_cast<int>(vio::decode_support::HW)))
 
 BENCHMARK_MAIN()
 

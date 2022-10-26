@@ -9,6 +9,7 @@ RUN apt-get update -qq && export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends \
     make cmake ninja-build \
     python3.10 python3-pip \
+    pkg-config \
     ${C_COMPILER}-${COMPILER_VERSION} \
     ${CXX_COMPILER}-${COMPILER_VERSION}
 
@@ -33,19 +34,51 @@ RUN  conan install . \
     --settings build_type=${BUILD_TYPE} \
     --settings compiler=${C_COMPILER} \
     --settings compiler.version=${COMPILER_VERSION} \
-    --build missing
-
-COPY . .
+    --build missing \
+    -c tools.system.package_manager:mode=install
 
 FROM base AS test
 ARG BUILD_TYPE=Release
-RUN cmake -G Ninja -D CMAKE_BUILD_TYPE=${BUILD_TYPE} -D UNIT_TESTS=ON -B ./build/${BUILD_TYPE} -S .
+COPY /tests/conanfile.txt tests/conanfile.txt
+RUN  conan install tests \
+    --install-folder build/${BUILD_TYPE}/modules \
+    --settings build_type=${BUILD_TYPE} \
+    --settings compiler=${C_COMPILER} \
+    --settings compiler.version=${COMPILER_VERSION} \
+    --build missing \
+    -c tools.system.package_manager:mode=install
+
+COPY . .
+RUN cmake -G Ninja -B ./build/${BUILD_TYPE} -S . \ 
+  -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
+  -D VIDEO_IO_BUILD_TESTS=ON \
+  -D VIDEO_IO_BUILD_EXAMPLES=OFF \
+  -D VIDEO_IO_BUILD_BENCHMARKS=OFF \
+  -D VIDEO_IO_BUILD_SANITIZERS=OFF \
+  -D VIDEO_IO_BUILD_DOCS=OFF
 RUN cmake --build ./build/${BUILD_TYPE} --config ${BUILD_TYPE}
 RUN ctest --test-dir ./build/${BUILD_TYPE} --config ${BUILD_TYPE} --output-junit results.xml --output-on-failure -j$(nproc)
 
 FROM base AS build
 ARG BUILD_TYPE=Release
-RUN cmake -G Ninja -D CMAKE_BUILD_TYPE=${BUILD_TYPE} -D UNIT_TESTS=OFF -B ./build/${BUILD_TYPE} -S .
+
+COPY examples/conanfile.txt examples/conanfile.txt
+RUN  conan install examples \
+    --install-folder build/${BUILD_TYPE}/modules \
+    --settings build_type=${BUILD_TYPE} \
+    --settings compiler=${C_COMPILER} \
+    --settings compiler.version=${COMPILER_VERSION} \
+    --build missing \
+    -c tools.system.package_manager:mode=install
+
+COPY . .
+RUN cmake -G Ninja -B ./build/${BUILD_TYPE} -S . \ 
+  -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
+  -D VIDEO_IO_BUILD_TESTS=OFF \
+  -D VIDEO_IO_BUILD_EXAMPLES=ON \
+  -D VIDEO_IO_BUILD_BENCHMARKS=OFF \
+  -D VIDEO_IO_BUILD_SANITIZERS=OFF \
+  -D VIDEO_IO_BUILD_DOCS=OFF
 RUN cmake --build ./build/${BUILD_TYPE} --config ${BUILD_TYPE}
 RUN cmake --install ./build/${BUILD_TYPE} --prefix ./install
 

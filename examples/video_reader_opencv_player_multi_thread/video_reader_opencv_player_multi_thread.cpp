@@ -35,11 +35,11 @@ int main(int argc, char** argv)
 		std::cout << "Using video file: " << video_path << std::endl;
 	}
 
-	vc::video_reader vc;
-	vc.set_log_callback(log_info, vc::log_level::info);
-	vc.set_log_callback(log_error, vc::log_level::error);
+	vio::video_reader vc;
+	vc.set_log_callback(log_info, vio::log_level::info);
+	vc.set_log_callback(log_error, vio::log_level::error);
 
-	if(!vc.open(video_path, vc::decode_support::HW))
+	if(!vc.open(video_path, vio::decode_support::HW))
 	{
 		std::cout << "Unable to open " << video_path << std::endl;
 		return -1;

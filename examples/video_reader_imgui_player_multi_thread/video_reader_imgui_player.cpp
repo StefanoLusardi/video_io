@@ -35,11 +35,11 @@ double get_elapsed_time()
 int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
-	vc::video_reader vc;
+	vio::video_reader vc;
 	// const auto video_path = "../../../tests/data/testsrc_120sec_30fps.mkv";
 	const auto video_path = "../../../tests/data/testsrc_10sec_30fps.mkv";
 
-	if (!vc.open(video_path, vc::decode_support::SW))
+	if (!vc.open(video_path, vio::decode_support::SW))
 	{
 		std::cout << "Unable to open video: " << video_path << std::endl;
 		return 1;
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
 	// glOrtho(0, window_width, window_height, 0, -1, 1);
 	// glMatrixMode(GL_MODELVIEW);
 
-	std::unique_ptr<vc::raw_frame> frame;
+	std::unique_ptr<vio::raw_frame> frame;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-		// frame = std::make_unique<vc::raw_frame>();
+		// frame = std::make_unique<vio::raw_frame>();
 
 		uint8_t* frame_data = {};
 		
@@ -177,7 +177,7 @@ int main(int argc, char **argv)
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		frame = std::make_unique<vc::raw_frame>();
+		frame = std::make_unique<vio::raw_frame>();
 		if (!vc.read(frame.get()))
 		{
 			total_end_time = std::chrono::high_resolution_clock::now();

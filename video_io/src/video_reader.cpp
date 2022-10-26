@@ -14,11 +14,10 @@ extern "C"
 #include <libavutil/hwcontext.h>
 }
 
-namespace vc
+namespace vio
 {
 video_reader::video_reader() noexcept
-    : _is_opened{ false }
-    , _hw{std::make_unique<hw_acceleration>()}
+: _is_opened{ false }
 {
     init(); 
     av_log_set_level(0);
@@ -50,21 +49,25 @@ void video_reader::init()
     _stream_index = -1;
 }
 
-// void video_reader::set_log_callback(const log_callback_t& cb, const log_level& level) { vc::logger::get().set_log_callback(cb, level); }
+// void video_reader::set_log_callback(const log_callback_t& cb, const log_level& level) { vio::logger::get().set_log_callback(cb, level); }
 
 bool video_reader::open(const std::string& video_path, decode_support decode_preference)
 {
     std::lock_guard lock(_open_mutex);
-    
     release();
 
     log_info("Opening video path:", video_path);
     log_info("HW acceleration", (decode_preference == decode_support::HW ? "required" : "not required"));
 
     if(decode_preference == decode_support::HW)
+    {
+        _hw = std::make_unique<hw_acceleration>();
         _decode_support = _hw->init();
+    }
     else
+    {
         _decode_support = decode_support::SW;
+    }
 
     if (_format_ctx = avformat_alloc_context(); !_format_ctx)
     {
@@ -74,13 +77,13 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
 
     if (auto r = av_dict_set(&_options, "rtsp_transport", "tcp", 0); r < 0)
     {
-        log_error("av_dict_set", vc::logger::get().err2str(r));
+        log_error("av_dict_set", vio::logger::get().err2str(r));
         return false;
     }
 
     if (auto r = avformat_open_input(&_format_ctx, video_path.c_str(), nullptr, &_options); r < 0)
     {
-        log_error("avformat_open_input", vc::logger::get().err2str(r));
+        log_error("avformat_open_input", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -93,7 +96,7 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
     const AVCodec* codec = nullptr;
     if (_stream_index = av_find_best_stream(_format_ctx, AVMediaType::AVMEDIA_TYPE_VIDEO, -1, -1, &codec, 0); _stream_index < 0)
     {
-        log_error("av_find_best_stream", vc::logger::get().err2str(_stream_index));
+        log_error("av_find_best_stream", vio::logger::get().err2str(_stream_index));
         return false;
     }
 
@@ -105,7 +108,7 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
 
     if (auto r = avcodec_parameters_to_context(_codec_ctx, _format_ctx->streams[_stream_index]->codecpar); r < 0)
     {
-        log_error("avcodec_parameters_to_context", vc::logger::get().err2str(r));
+        log_error("avcodec_parameters_to_context", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -118,7 +121,7 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
 
     if (auto r = avcodec_open2(_codec_ctx, codec, nullptr); r < 0)
     {
-        log_error("avcodec_open2", vc::logger::get().err2str(r));
+        log_error("avcodec_open2", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -160,19 +163,12 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
 	_dst_frame->height = _codec_ctx->height;
     if (auto r = av_frame_get_buffer(_dst_frame, 0); r < 0)
     {
-        log_error("av_frame_get_buffer", vc::logger::get().err2str(r));
+        log_error("av_frame_get_buffer", vio::logger::get().err2str(r));
         return false;
     }
 
     _is_opened = true;
-    log_info("Opened video path:", video_path);
-    log_info("Frame Width:", _codec_ctx->width, "px");
-    log_info("Frame Height:", _codec_ctx->height, "px");
-    log_info("Frame Rate:", (get_fps() != std::nullopt ? get_fps().value() : -1), "fps");
-    log_info("Duration:", (get_duration() != std::nullopt ? std::chrono::duration_cast<std::chrono::seconds>(get_duration().value()).count() : -1), "sec");
-    log_info("Number of frames:", (get_frame_count() != std::nullopt ? get_frame_count().value() : -1));
-    log_info("Video Capture is initialized");
-
+    log_info("Video Reader is opened correctly");
     return true;
 }
 
@@ -257,57 +253,85 @@ auto video_reader::get_fps() const -> std::optional<double>
     return std::make_optional(fps);
 }
 
-bool video_reader::is_error(const char* func_name, const int error) const
+bool video_reader::decode(AVPacket *packet)
 {
-    if(AVERROR_EOF == error) 
+    if(auto r = av_read_frame(_format_ctx, packet); r < 0)
     {
-        log_info(func_name, vc::logger::get().err2str(error));
+        log_error("av_read_frame", vio::logger::get().err2str(r));
         return false;
     }
-    
-    log_error(func_name, vc::logger::get().err2str(error));  
-    return true;    
-}
 
-bool video_reader::decode()
-{
     while(true)
     {
-        av_packet_unref(_packet);
-        if(auto r = av_read_frame(_format_ctx, _packet); r < 0)
+        if (packet->stream_index != _stream_index)
         {
-            if (AVERROR(EAGAIN) == r)
-                continue; 
-
-            if(is_error("av_read_frame", r))
-                return false;
+            av_packet_unref(packet);
+            continue;
         }
 
-        if (_packet->stream_index != _stream_index)
-            continue;
-
-        if (auto r = avcodec_send_packet(_codec_ctx, _packet); r < 0)
+        if (auto r = avcodec_send_packet(_codec_ctx, packet); r < 0)
         {
-            if (AVERROR(EAGAIN) == r)
-                continue; 
-            
-            if(is_error("avcodec_send_packet", r))
-                return false;
+            log_error("avcodec_send_packet", r);
+            av_packet_unref(packet);
+            return false;
         }
 
         if (auto r = avcodec_receive_frame(_codec_ctx, _src_frame); r < 0)
         {
-            if (AVERROR(EAGAIN) == r)                         
+            if (AVERROR(EAGAIN) == r)
                 continue; 
             
-            log_info("avcodec_receive_frame", vc::logger::get().err2str(r));
-            // release();
+            av_packet_unref(packet);
+            log_info("avcodec_receive_frame", vio::logger::get().err2str(r));
             return false;
         }
         
+        av_packet_unref(packet);
         return true;
     }
 }
+
+/*
+        decode(nullptr);
+
+bool video_reader::decode(AVPacket *packet)
+{
+    if(auto r = av_read_frame(_format_ctx, _packet); r < 0)
+    {
+        log_error("av_read_frame", vio::logger::get().err2str(r));
+        return false;
+    }
+
+    while(true)
+    {
+        if (_packet->stream_index != _stream_index)
+        {
+            av_packet_unref(_packet);
+            continue;
+        }
+
+        if (auto r = avcodec_send_packet(_codec_ctx, _packet); r < 0)
+        {        
+            log_error("avcodec_send_packet", r);
+            return false;
+        }
+
+        if (auto r = avcodec_receive_frame(_codec_ctx, _src_frame); r < 0)
+        {
+            if(r == AVERROR_EOF || r == AVERROR(EAGAIN))
+            {
+                av_packet_unref(_packet);
+                continue;
+            }
+
+            return false;
+        }
+    }
+
+    av_packet_unref(_packet);
+    return true;
+}
+*/
 
 bool video_reader::copy_hw_frame()
 {
@@ -315,13 +339,13 @@ bool video_reader::copy_hw_frame()
     {
         if (auto r = av_hwframe_transfer_data(_tmp_frame, _src_frame, 0); r < 0)
         {
-            log_error("av_hwframe_transfer_data", vc::logger::get().err2str(r));
+            log_error("av_hwframe_transfer_data", vio::logger::get().err2str(r));
             return false;
         }
 
         if (auto r = av_frame_copy_props(_tmp_frame, _src_frame); r < 0)
         {
-            log_error("av_frame_copy_props", vc::logger::get().err2str(r));
+            log_error("av_frame_copy_props", vio::logger::get().err2str(r));
             return false;
         }
     }
@@ -333,8 +357,14 @@ bool video_reader::copy_hw_frame()
     return true;
 }
 
-bool video_reader::convert()
-{
+bool video_reader::convert(uint8_t** data)
+{   
+    if(_decode_support == decode_support::HW)
+    {
+        if(!copy_hw_frame())
+            return false;
+    }
+
     if (!_sws_ctx)
     {
         _sws_ctx = sws_getCachedContext(_sws_ctx,
@@ -353,49 +383,55 @@ bool video_reader::convert()
     sws_scale(_sws_ctx, _tmp_frame->data, _tmp_frame->linesize,
         0, _codec_ctx->height, _dst_frame->data, _dst_frame->linesize);
 
+    *data = _dst_frame->data[0];
+
+    const auto time_base = _format_ctx->streams[_stream_index]->time_base;
+    const auto pts = _tmp_frame->best_effort_timestamp * static_cast<double>(time_base.num) / static_cast<double>(time_base.den);
+
     return true;
 }
 
 bool video_reader::read(uint8_t** data)
 {
-    if(!decode())
+    if(!_is_opened)
         return false;
 
-    if(_decode_support == decode_support::HW)
-        if(!copy_hw_frame())
-            return false;
-
-    if(!convert())
+    if(!decode(_packet))
         return false;
 
-    *data = _dst_frame->data[0];
+    if(!convert(data))
+        return false;
+
     return true;
 }
 
 bool video_reader::read(raw_frame* frame)
 {
-    if(!decode())
+    if(!_is_opened)
         return false;
+    
+    // if(!decode())
+    //     return false;
 
-    if(!copy_hw_frame())
-        return false;
+    // if(!copy_hw_frame())
+    //     return false;
 
-    _dst_frame->data[0] = frame->data.data();
-    if(!convert())
-        return false;
+    // _dst_frame->data[0] = frame->data.data();
+    // if(!convert())
+    //     return false;
 
-    const auto time_base = _format_ctx->streams[_stream_index]->time_base;
-    frame->pts = _tmp_frame->best_effort_timestamp * static_cast<double>(time_base.num) / static_cast<double>(time_base.den);
+    // const auto time_base = _format_ctx->streams[_stream_index]->time_base;
+    // frame->pts = _tmp_frame->best_effort_timestamp * static_cast<double>(time_base.num) / static_cast<double>(time_base.den);
     
     return true;
 }
 
-void video_reader::release()
+bool video_reader::release()
 {
     if(!_is_opened)
-        return;
+        return false;
 
-    log_info("Release video capture");
+    log_info("Release video reader");
 
     if(_sws_ctx)
         sws_freeContext(_sws_ctx);
@@ -421,11 +457,15 @@ void video_reader::release()
     if(_dst_frame)
         av_frame_free(&_dst_frame);
 
-    if(_decode_support == decode_support::HW && _tmp_frame)
+    if(_tmp_frame && _decode_support == decode_support::HW)
         av_frame_free(&_tmp_frame);
 
     init();
-    _hw->release();
+
+    if(_decode_support == decode_support::HW)
+        _hw->release();
+
+    return true;
 }
 
 }

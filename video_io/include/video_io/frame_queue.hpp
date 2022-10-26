@@ -8,7 +8,7 @@
 #include <queue>
 #include <algorithm>
 
-namespace vc
+namespace vio
 {
 	template <typename T>
 	class frame_queue

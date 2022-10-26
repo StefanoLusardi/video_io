@@ -1,0 +1,60 @@
+name: windows
+
+on: [push, pull_request]
+
+jobs:
+  build:
+  
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [windows-2019] #, windows-2022]
+        build_type: ["Debug"] #, "Release"]
+        generator: ["Ninja"] #, "Visual Studio 17 2022"]
+
+    env:
+      BUILD_DIR: ${{github.workspace}}/build/${{matrix.build_type}}
+      CC: cl
+      CXX: cl
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Ninja
+      run: |
+        choco install --accept-license -y Ninja
+
+    - name: Install Conan
+      run: |
+        pip install conan
+        conan profile new default --detect 
+        conan profile update settings.compiler="Visual Studio" default
+        conan profile update settings.compiler.version=16 default
+        
+        conan profile show default
+        conan install . `
+          -c tools.system.package_manager:mode=install `
+          --install-folder ${{env.BUILD_DIR}}/modules `
+          --settings build_type=${{matrix.build_type}} `
+          --build missing `
+          --update
+
+    - name: Configure
+      run: |
+        echo Configure
+        "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+        cmake -S . -B ${{env.BUILD_DIR}} -G ${{matrix.generator}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DVIDEO_IO_BUILD_TESTS=OFF
+    
+    - name: Build
+      run: |
+        echo Build
+        "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+        cmake --build ${{env.BUILD_DIR}} --config ${{matrix.build_type}}
+    
+    - name: Test
+      run: |
+        echo Test
+        "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+        ctest --test-dir ${{env.BUILD_DIR}} --config ${matrix.build_type} --output-junit results.xml --output-on-failure -j$(nproc)

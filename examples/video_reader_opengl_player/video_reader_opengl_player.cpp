@@ -31,10 +31,10 @@ double get_elapsed_time()
 int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
-	vc::video_reader vc;
+	vio::video_reader vc;
 	const auto video_path = "testsrc.mp4";
 
-	vc.open(video_path, vc::decode_support::SW);
+	vc.open(video_path, vio::decode_support::SW);
 
 	const auto fps = vc.get_fps();
 	const auto size = vc.get_frame_size();
@@ -78,12 +78,12 @@ int main(int argc, char **argv)
 	glOrtho(0, window_width, window_height, 0, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 
-	std::unique_ptr<vc::raw_frame> frame;
+	std::unique_ptr<vio::raw_frame> frame;
 	while (!glfwWindowShouldClose(window))
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		frame = std::make_unique<vc::raw_frame>();
+		frame = std::make_unique<vio::raw_frame>();
 		if (!vc.read(frame.get()))
 		{
 			total_end_time = std::chrono::high_resolution_clock::now();

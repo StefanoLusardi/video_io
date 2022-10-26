@@ -3,7 +3,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace vc
+namespace vio
 {
 struct raw_frame
 {

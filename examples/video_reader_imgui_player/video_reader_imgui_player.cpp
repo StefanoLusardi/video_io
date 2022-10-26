@@ -2,7 +2,7 @@
  * example: 	video_player_imgui
  * author:		Stefano Lusardi
  * date:		Jun 2022
- * description:	Example to show how to integrate cv::video_reader in a simple video player based on OpenGL (using GLFW). 
+ * description:	Example to show how to integrate vio::video_reader in a simple video player based on OpenGL (using GLFW). 
  * 				Single threaded: Main thread decodes and draws subsequent frames.
  * 				Note that this serves only as an example, as in real world application 
  * 				you might want to handle decoding and rendering on separate threads (see any video_player_xxx_multi_thread).
@@ -14,7 +14,6 @@
 #include <atomic>
 
 #include <video_io/video_reader.hpp>
-#include <video_reader/raw_frame.hpp>
 
 #include <imgui.h>
 #include <GLFW/glfw3.h>
@@ -35,11 +34,11 @@ double get_elapsed_time()
 int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
-	vc::video_reader vc;
-	// const auto video_path = "../../../tests/data/testsrc_120sec_30fps.mkv";
-	const auto video_path = "../../../tests/data/testsrc_10sec_30fps.mkv";
+	vio::video_reader vc;
+	const auto video_path = "../../../../tests/data/testsrc_120sec_30fps.mkv";
+	// const auto video_path = "../../../../tests/data/testsrc_10sec_30fps.mkv";
 
-	if (!vc.open(video_path, vc::decode_support::SW))
+	if (!vc.open(video_path, vio::decode_support::SW))
 	{
 		std::cout << "Unable to open video: " << video_path << std::endl;
 		return 1;
@@ -84,19 +83,19 @@ int main(int argc, char **argv)
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     ImGui::StyleColorsDark();
+    ImGuiStyle &style = ImGui::GetStyle();
+    style.WindowBorderSize = 0.0f;
+    style.WindowPadding = { 0.0f, 0.0f };
 
-	GLuint tex_handle;
-	glGenTextures(1, &tex_handle);
-	glBindTexture(GL_TEXTURE_2D, tex_handle);
-
-	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-
-	// glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	// glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	GLuint texture_handle;
+	glGenTextures(1, &texture_handle);
+	glBindTexture(GL_TEXTURE_2D, texture_handle);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 1);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glClearColor(0.f, 0.f, 0.f, 0.f);
 
 	std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double>> start_time = std::chrono::steady_clock::now();
 	std::chrono::duration<double> elapsed_time(0.0);
@@ -104,116 +103,45 @@ int main(int argc, char **argv)
 	auto total_start_time = std::chrono::high_resolution_clock::now();
 	auto total_end_time = std::chrono::high_resolution_clock::now();
 
-	// int window_width, window_height;
-	// glfwGetFramebufferSize(window, &window_width, &window_height);
-	// glMatrixMode(GL_PROJECTION);
-	// glLoadIdentity();
-	// glOrtho(0, window_width, window_height, 0, -1, 1);
-	// glMatrixMode(GL_MODELVIEW);
-
-	std::unique_ptr<vc::raw_frame> frame;
-
     while (!glfwWindowShouldClose(window))
     {
-        glfwPollEvents();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-		// frame = std::make_unique<vc::raw_frame>();
-
 		uint8_t* frame_data = {};
-		
-		// if (!vc.read(frame.get()))
-		
 		if (!vc.read(&frame_data))
 		{
 			total_end_time = std::chrono::high_resolution_clock::now();
-			std::cout << "Couldn't load video frame" << std::endl;
 			std::cout << "Video finished" << std::endl;
 			break;
 		}
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame_width, frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame_data);
-		// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame_width, frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame->data.data());
 
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, tex_handle);
-		glBegin(GL_QUADS);
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->Pos);
+		ImGui::SetNextWindowSize(viewport->Size);
 
-		glTexCoord2d(0, 0);
-		glVertex2i(0, 0);
+		static ImGuiWindowFlags main_window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-		glTexCoord2d(1, 0);
-		glVertex2i(frame_width, 0);
-
-		glTexCoord2d(1, 1);
-		glVertex2i(frame_width, frame_height);
-
-		glTexCoord2d(0, 1);
-		glVertex2i(0, frame_height);
-
-		glEnd();
-		glDisable(GL_TEXTURE_2D);
-
-		ImGui::Begin("OpenGL Texture Text");
-		ImGui::Text("pointer = %d", tex_handle);
-		ImGui::Text("size = %d x %d", screen_width, screen_height);
-		ImGui::Image((void*)(intptr_t)tex_handle, ImVec2(screen_width, screen_height));
+		ImGui::Begin("MainWindow", nullptr, main_window_flags);
+		ImGui::Image((void*)static_cast<uintptr_t>(texture_handle), viewport->Size);
 		ImGui::End();
+
 
         ImGui::Render();
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        glClearColor(0.f, 0.f, 0.f, 0.f);
         glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
+        glfwPollEvents();
     }
 
-/*
-	while (!glfwWindowShouldClose(window))
-	{
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		frame = std::make_unique<vc::raw_frame>();
-		if (!vc.read(frame.get()))
-		{
-			total_end_time = std::chrono::high_resolution_clock::now();
-			std::cout << "Couldn't load video frame" << std::endl;
-			std::cout << "Video finished" << std::endl;
-			break;
-		}
-
-		if (const auto timeout = frame->pts - get_elapsed_time(); timeout > 0.0)
-			std::this_thread::sleep_for(std::chrono::duration<double>(timeout));
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame_width, frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame->data.data());
-
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, tex_handle);
-		glBegin(GL_QUADS);
-
-		glTexCoord2d(0, 0);
-		glVertex2i(0, 0);
-
-		glTexCoord2d(1, 0);
-		glVertex2i(frame_width, 0);
-
-		glTexCoord2d(1, 1);
-		glVertex2i(frame_width, frame_height);
-
-		glTexCoord2d(0, 1);
-		glVertex2i(0, frame_height);
-
-		glEnd();
-		glDisable(GL_TEXTURE_2D);
-
-		glfwSwapBuffers(window);
-		glfwPollEvents();
-	}
-*/
 	std::cout << "Decode time: " << std::chrono::duration_cast<std::chrono::milliseconds>(total_end_time - total_start_time).count() << "ms" << std::endl;
 	
 	vc.release();

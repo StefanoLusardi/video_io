@@ -2,9 +2,9 @@
 
 #include <gtest/gtest.h>
 
-namespace vc { class raw_frame; }
+namespace vio { class raw_frame; }
 
-namespace vc::test
+namespace vio::test
 {
 
 class raw_frame_test : public ::testing::Test
@@ -15,7 +15,7 @@ protected:
     virtual void SetUp() override { }
     virtual void TearDown() override { }
 
-    std::unique_ptr<vc::raw_frame> raw_frame;
+    std::unique_ptr<vio::raw_frame> raw_frame;
 
 private:
     template<typename... Args>

@@ -17,7 +17,7 @@ struct AVFrame;
 struct SwsContext;
 struct AVDictionary;
 
-namespace vc
+namespace vio
 {
 struct raw_frame;
 enum class decode_support { none, SW, HW };
@@ -35,7 +35,7 @@ public:
     bool is_opened() const;
     bool read(uint8_t** data);
     bool read(raw_frame* frame);
-    void release();
+    bool release();
     
     auto get_frame_count() const -> std::optional<int>;
     auto get_duration() const -> std::optional<std::chrono::steady_clock::duration>;
@@ -44,11 +44,10 @@ public:
     auto get_fps() const -> std::optional<double>;
 
 protected:
-    bool is_error(const char* func_name, const int error) const;
     void init();
-    bool decode();
+    bool decode(AVPacket *packet);
+    bool convert(uint8_t** data);
     bool copy_hw_frame();
-    bool convert();
 
 private:
     bool _is_opened;

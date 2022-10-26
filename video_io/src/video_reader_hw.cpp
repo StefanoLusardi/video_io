@@ -6,7 +6,7 @@ extern "C"
 #include <libavutil/hwcontext.h>
 }
 
-namespace vc
+namespace vio
 {
 video_reader::hw_acceleration::hw_acceleration()
 {
@@ -65,7 +65,7 @@ decode_support video_reader::hw_acceleration::init()
     hw_pixel_format = get_hw_pixel_format(hw_type);
     if (auto r = av_hwdevice_ctx_create(&hw_device_ctx, hw_type, nullptr, nullptr, 0); r < 0)
     {
-        log_error("av_hwdevice_ctx_create", vc::logger::get().err2str(r));
+        log_error("av_hwdevice_ctx_create", vio::logger::get().err2str(r));
         log_info("HW decoder not available. Fall back to SW decoding");
         return decode_support::SW;
     }

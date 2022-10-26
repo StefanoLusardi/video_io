@@ -17,7 +17,7 @@ struct AVFrame;
 struct SwsContext;
 struct AVStream;
 
-namespace vc
+namespace vio
 {
 struct raw_frame;
 
@@ -45,8 +45,6 @@ protected:
     bool convert(const uint8_t* data);
     bool encode(AVFrame* frame);
 
-    void close_stream();
-
     AVFrame* alloc_frame(int pix_fmt, int width, int height);
 
 private:
@@ -58,12 +56,13 @@ private:
     AVPacket* _packet;
     SwsContext* _sws_ctx;
 
+    AVFrame* _frame;
+    AVFrame* _tmp_frame;
+
     AVStream* _stream;
     int64_t _stream_duration;
     int64_t _next_pts;
     
-    AVFrame* _frame;
-    AVFrame* _tmp_frame;
 };
 
 }

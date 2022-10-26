@@ -1,7 +1,7 @@
 #include "test_video_reader.hpp"
 #include <gtest/gtest.h>
 
-namespace vc::test
+namespace vio::test
 {
 
 TEST_F(video_reader_test, open_valid_path)

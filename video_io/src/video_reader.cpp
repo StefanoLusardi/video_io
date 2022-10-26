@@ -14,7 +14,7 @@ extern "C"
 #include <libavutil/hwcontext.h>
 }
 
-namespace vc
+namespace vio
 {
 video_reader::video_reader() noexcept
 : _is_opened{ false }
@@ -49,7 +49,7 @@ void video_reader::init()
     _stream_index = -1;
 }
 
-// void video_reader::set_log_callback(const log_callback_t& cb, const log_level& level) { vc::logger::get().set_log_callback(cb, level); }
+// void video_reader::set_log_callback(const log_callback_t& cb, const log_level& level) { vio::logger::get().set_log_callback(cb, level); }
 
 bool video_reader::open(const std::string& video_path, decode_support decode_preference)
 {
@@ -77,13 +77,13 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
 
     if (auto r = av_dict_set(&_options, "rtsp_transport", "tcp", 0); r < 0)
     {
-        log_error("av_dict_set", vc::logger::get().err2str(r));
+        log_error("av_dict_set", vio::logger::get().err2str(r));
         return false;
     }
 
     if (auto r = avformat_open_input(&_format_ctx, video_path.c_str(), nullptr, &_options); r < 0)
     {
-        log_error("avformat_open_input", vc::logger::get().err2str(r));
+        log_error("avformat_open_input", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -96,7 +96,7 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
     const AVCodec* codec = nullptr;
     if (_stream_index = av_find_best_stream(_format_ctx, AVMediaType::AVMEDIA_TYPE_VIDEO, -1, -1, &codec, 0); _stream_index < 0)
     {
-        log_error("av_find_best_stream", vc::logger::get().err2str(_stream_index));
+        log_error("av_find_best_stream", vio::logger::get().err2str(_stream_index));
         return false;
     }
 
@@ -108,7 +108,7 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
 
     if (auto r = avcodec_parameters_to_context(_codec_ctx, _format_ctx->streams[_stream_index]->codecpar); r < 0)
     {
-        log_error("avcodec_parameters_to_context", vc::logger::get().err2str(r));
+        log_error("avcodec_parameters_to_context", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -121,7 +121,7 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
 
     if (auto r = avcodec_open2(_codec_ctx, codec, nullptr); r < 0)
     {
-        log_error("avcodec_open2", vc::logger::get().err2str(r));
+        log_error("avcodec_open2", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -163,7 +163,7 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
 	_dst_frame->height = _codec_ctx->height;
     if (auto r = av_frame_get_buffer(_dst_frame, 0); r < 0)
     {
-        log_error("av_frame_get_buffer", vc::logger::get().err2str(r));
+        log_error("av_frame_get_buffer", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -257,7 +257,7 @@ bool video_reader::decode(AVPacket *packet)
 {
     if(auto r = av_read_frame(_format_ctx, packet); r < 0)
     {
-        log_error("av_read_frame", vc::logger::get().err2str(r));
+        log_error("av_read_frame", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -282,7 +282,7 @@ bool video_reader::decode(AVPacket *packet)
                 continue; 
             
             av_packet_unref(packet);
-            log_info("avcodec_receive_frame", vc::logger::get().err2str(r));
+            log_info("avcodec_receive_frame", vio::logger::get().err2str(r));
             return false;
         }
         
@@ -298,7 +298,7 @@ bool video_reader::decode(AVPacket *packet)
 {
     if(auto r = av_read_frame(_format_ctx, _packet); r < 0)
     {
-        log_error("av_read_frame", vc::logger::get().err2str(r));
+        log_error("av_read_frame", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -339,13 +339,13 @@ bool video_reader::copy_hw_frame()
     {
         if (auto r = av_hwframe_transfer_data(_tmp_frame, _src_frame, 0); r < 0)
         {
-            log_error("av_hwframe_transfer_data", vc::logger::get().err2str(r));
+            log_error("av_hwframe_transfer_data", vio::logger::get().err2str(r));
             return false;
         }
 
         if (auto r = av_frame_copy_props(_tmp_frame, _src_frame); r < 0)
         {
-            log_error("av_frame_copy_props", vc::logger::get().err2str(r));
+            log_error("av_frame_copy_props", vio::logger::get().err2str(r));
             return false;
         }
     }

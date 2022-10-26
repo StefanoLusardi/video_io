@@ -21,12 +21,12 @@
 
 using namespace std::chrono_literals;
 
-void decode_thread(vc::video_reader& vc, vc::frame_queue<std::unique_ptr<vc::raw_frame>>& frame_queue)
+void decode_thread(vio::video_reader& vc, vio::frame_queue<std::unique_ptr<vio::raw_frame>>& frame_queue)
 {
 	int frames_decoded = 0;
 	while(true)
 	{
-		auto frame = std::make_unique<vc::raw_frame>();
+		auto frame = std::make_unique<vio::raw_frame>();
 		if(!vc.read(frame.get()))
 		{
 			std::cout << "Video finished" << std::endl;
@@ -117,16 +117,16 @@ double get_elapsed_time()
 int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
-	vc::video_reader vc;
+	vio::video_reader vc;
 	const auto video_path = "../../../../tests/data/testsrc_10sec_30fps.mkv";
 
-	vc.open(video_path, vc::decode_support::HW);
+	vc.open(video_path, vio::decode_support::HW);
 
 	const auto fps = vc.get_fps();
 	const auto frame_size = vc.get_frame_size();
 	const auto [frame_width, frame_height] = frame_size.value();
 
-	vc::frame_queue<std::unique_ptr<vc::raw_frame>> frame_queue(3);
+	vio::frame_queue<std::unique_ptr<vio::raw_frame>> frame_queue(3);
 	std::thread t(&decode_thread, std::ref(vc), std::ref(frame_queue));
 
 	GLFWwindow *window = nullptr;
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 
 	int frames_shown = 0;
-	std::unique_ptr<vc::raw_frame> frame;
+	std::unique_ptr<vio::raw_frame> frame;
 
 	std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double>> start_time = std::chrono::steady_clock::now();
 	std::chrono::duration<double> elapsed_time(0.0);

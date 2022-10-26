@@ -18,7 +18,7 @@ extern "C"
 #include <libswscale/swscale.h>
 }
  
-namespace vc
+namespace vio
 {
 video_writer::video_writer() noexcept
 : _is_opened { false }
@@ -63,11 +63,11 @@ bool video_writer::open(const std::string& video_path, int width, int height, co
 
     if (auto r = avformat_alloc_output_context2(&_format_ctx, nullptr, nullptr, video_path.c_str()); r < 0) 
     {
-        log_error("Could not deduce output format from file extension: using MPEG", vc::logger::get().err2str(r));
+        log_error("Could not deduce output format from file extension: using MPEG", vio::logger::get().err2str(r));
         
         if (auto r = avformat_alloc_output_context2(&_format_ctx, nullptr, "mpeg", video_path.c_str()); r < 0)
         {
-            log_error("avformat_alloc_output_context2", vc::logger::get().err2str(r));
+            log_error("avformat_alloc_output_context2", vio::logger::get().err2str(r));
             return false;
         }
     }
@@ -81,7 +81,7 @@ bool video_writer::open(const std::string& video_path, int width, int height, co
 
     if (_stream = avformat_new_stream(_format_ctx, nullptr); !_stream)
     {
-        log_error("avformat_new_stream", vc::logger::get().err2str(r));
+        log_error("avformat_new_stream", vio::logger::get().err2str(r));
         return false;
     }
     _stream->id = _format_ctx->nb_streams-1;
@@ -118,7 +118,7 @@ bool video_writer::open(const std::string& video_path, int width, int height, co
 
     if (auto r = avcodec_open2(_codec_ctx, codec, nullptr); r < 0)
     {
-        log_error("avcodec_open2", vc::logger::get().err2str(r));
+        log_error("avcodec_open2", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -145,7 +145,7 @@ bool video_writer::open(const std::string& video_path, int width, int height, co
 
     if (auto r = avcodec_parameters_from_context(_stream->codecpar, _codec_ctx); r < 0)
     {
-        log_error("avcodec_parameters_from_context", vc::logger::get().err2str(r));
+        log_error("avcodec_parameters_from_context", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -153,14 +153,14 @@ bool video_writer::open(const std::string& video_path, int width, int height, co
     {
         if (auto r = avio_open(&_format_ctx->pb, video_path.c_str(), AVIO_FLAG_WRITE); r < 0) 
         {
-            log_error("avio_open", vc::logger::get().err2str(r));
+            log_error("avio_open", vio::logger::get().err2str(r));
             return false;
         }
     }
  
     if (auto r = avformat_write_header(_format_ctx, nullptr); r < 0) 
     {
-        log_error("avformat_write_header", vc::logger::get().err2str(r));
+        log_error("avformat_write_header", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -201,7 +201,7 @@ AVFrame* video_writer::alloc_frame(int pix_fmt, int width, int height)
     frame->height = height;
     if (auto r = av_frame_get_buffer(frame, 0); r < 0)
     {
-        log_error("av_frame_get_buffer", vc::logger::get().err2str(r));
+        log_error("av_frame_get_buffer", vio::logger::get().err2str(r));
         return nullptr;
     }
  
@@ -212,7 +212,7 @@ bool video_writer::encode(AVFrame* frame)
 {
     if (auto r = avcodec_send_frame(_codec_ctx, frame); r < 0) 
     {
-        log_error("avcodec_send_frame", vc::logger::get().err2str(r));
+        log_error("avcodec_send_frame", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -233,7 +233,7 @@ bool video_writer::encode(AVFrame* frame)
         // Unreferencing is not necessary, i.e. no need to call av_packet_unref(_packet).
         if (auto r = av_interleaved_write_frame(_format_ctx, _packet); r < 0)
         {
-            log_info("av_interleaved_write_frame", vc::logger::get().err2str(r));
+            log_info("av_interleaved_write_frame", vio::logger::get().err2str(r));
             return false;
         }
     }
@@ -253,7 +253,7 @@ bool video_writer::convert(const uint8_t* data)
     // when we pass a frame to the encoder, it may keep a reference to it internally; make sure we do not overwrite it here
     if (auto r = av_frame_make_writable(_frame); r < 0)
     {
-        log_error("av_frame_make_writable", vc::logger::get().err2str(r));
+        log_error("av_frame_make_writable", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -295,7 +295,7 @@ bool video_writer::convert(const uint8_t* data)
 
         if (auto r = av_image_fill_arrays(_tmp_frame->data, _tmp_frame->linesize, data, _codec_ctx->pix_fmt, _codec_ctx->width, _codec_ctx->height, 1); r < 0)
         {
-            log_error("av_image_fill_arrays", vc::logger::get().err2str(r));
+            log_error("av_image_fill_arrays", vio::logger::get().err2str(r));
             return false;
         }
 
@@ -306,7 +306,7 @@ bool video_writer::convert(const uint8_t* data)
     {
         if (auto r = av_image_fill_arrays(_frame->data, _frame->linesize, data, _codec_ctx->pix_fmt, _codec_ctx->width, _codec_ctx->height, 1); r < 0)
         {
-            log_error("av_image_fill_arrays", vc::logger::get().err2str(r));
+            log_error("av_image_fill_arrays", vio::logger::get().err2str(r));
             return false;
         }
     }
@@ -353,7 +353,7 @@ bool video_writer::save()
 
     if(auto r = av_write_trailer(_format_ctx); r < 0) 
     {
-        log_error("avformat_write_header", vc::logger::get().err2str(r));
+        log_error("avformat_write_header", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -361,7 +361,7 @@ bool video_writer::save()
     {
         if (auto r = avio_closep(&_format_ctx->pb); r < 0) 
         {
-            log_error("avformat_write_header", vc::logger::get().err2str(r));
+            log_error("avformat_write_header", vio::logger::get().err2str(r));
             return false;
         }
     }
@@ -410,13 +410,13 @@ bool video_writer::check(const std::string& video_path)
 
     if (auto r = avformat_open_input(&fmt_ctx, video_path.c_str(), nullptr, nullptr); r < 0)
     {
-        log_error("avformat_open_input", vc::logger::get().err2str(r));
+        log_error("avformat_open_input", vio::logger::get().err2str(r));
         return false;
     }
 
     if (auto r = avformat_find_stream_info(fmt_ctx, nullptr); r < 0)
     {
-        log_error("avformat_find_stream_info", vc::logger::get().err2str(r));
+        log_error("avformat_find_stream_info", vio::logger::get().err2str(r));
         return false;
     }
 
@@ -424,7 +424,7 @@ bool video_writer::check(const std::string& video_path)
     int stream_index = av_find_best_stream(fmt_ctx, AVMediaType::AVMEDIA_TYPE_VIDEO, -1, -1, &codec, 0); 
     if (stream_index < 0)
     {
-        log_error("av_find_best_stream", vc::logger::get().err2str(stream_index));
+        log_error("av_find_best_stream", vio::logger::get().err2str(stream_index));
         return false;
     }
 

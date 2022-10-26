@@ -5,14 +5,14 @@
 
 #include <filesystem>
 
-namespace vc::test
+namespace vio::test
 {
 
 class video_reader_test : public ::testing::TestWithParam<std::string>
 {
 protected:
     explicit video_reader_test()
-    : v{ std::make_unique<vc::video_reader>() }
+    : v{ std::make_unique<vio::video_reader>() }
     , test_name { testing::UnitTest::GetInstance()->current_test_info()->name() }
     , default_input_directory{ std::filesystem::current_path() / "../../../tests/data/new" }
     , default_video_extension { ".mp4" }
@@ -25,7 +25,7 @@ protected:
     virtual void SetUp() override { }
     virtual void TearDown() override { }
 
-    std::unique_ptr<vc::video_reader> v;
+    std::unique_ptr<vio::video_reader> v;
     const std::string test_name;
     const std::filesystem::path default_input_directory;
     const std::string default_video_extension;

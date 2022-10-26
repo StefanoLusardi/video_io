@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <thread>
 
-namespace vc::test
+namespace vio::test
 {
 
 TEST_F(video_writer_test, open_without_duration)

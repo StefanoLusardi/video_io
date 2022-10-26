@@ -14,14 +14,14 @@ extern "C"
 #if defined(VIDEO_CAPTURE_LOG_ENABLED)
     #include <mutex>
     #include <iostream>
-    #define log_info(...) vc::logger::get().log(log_level::info, ##__VA_ARGS__)
-    #define log_error(...) vc::logger::get().log(log_level::error, ##__VA_ARGS__)
+    #define log_info(...) vio::logger::get().log(log_level::info, ##__VA_ARGS__)
+    #define log_error(...) vio::logger::get().log(log_level::error, ##__VA_ARGS__)
 #else
     #define log_info(...) (void)0
     #define log_error(...) (void)0
 #endif
 
-namespace vc
+namespace vio
 {
 enum class log_level { all, info, error };
 

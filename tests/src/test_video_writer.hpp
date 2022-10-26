@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <filesystem>
 
-namespace vc::test
+namespace vio::test
 {
 
 class video_writer_test : public ::testing::TestWithParam<std::string>
@@ -23,7 +23,7 @@ public:
 
 protected:
     explicit video_writer_test()
-    : v{ std::make_unique<vc::video_writer>() }
+    : v{ std::make_unique<vio::video_writer>() }
     , test_name { testing::UnitTest::GetInstance()->current_test_info()->name() }
     , default_output_directory{ std::filesystem::current_path() / "temp" }
     , default_video_extension { ".mp4" }
@@ -37,7 +37,7 @@ protected:
     virtual void SetUp() override { }
     virtual void TearDown() override { }
 
-    std::unique_ptr<vc::video_writer> v;
+    std::unique_ptr<vio::video_writer> v;
     const std::string test_name;
     const std::filesystem::path default_output_directory;
     const std::string default_video_extension;

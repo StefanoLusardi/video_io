@@ -17,7 +17,7 @@ struct AVFrame;
 struct SwsContext;
 struct AVStream;
 
-namespace vc
+namespace vio
 {
 struct raw_frame;
 

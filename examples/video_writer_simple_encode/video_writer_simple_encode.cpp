@@ -41,7 +41,7 @@ static void get_frame_data(AVFrame *pict, int frame_index, int width, int height
 
 void record_n_frames(const char* format)
 {
-    vc::video_writer vw;
+    vio::video_writer vw;
 
     const int num_frames_to_write = 300;
 	const auto video_path = std::string("out_" + std::to_string(num_frames_to_write) + "_frames" + format);
@@ -78,7 +78,7 @@ void record_n_frames(const char* format)
 
 void record_n_seconds(const char* format)
 {
-    vc::video_writer vw;
+    vio::video_writer vw;
 
     const int num_seconds_to_write = 10;
 	const auto video_path = std::string("out_" + std::to_string(num_seconds_to_write) + "_seconds" + format);

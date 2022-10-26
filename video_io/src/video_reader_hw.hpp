@@ -8,7 +8,7 @@ extern "C"
 #include <libavutil/hwcontext.h>
 }
 
-namespace vc
+namespace vio
 {
 struct video_reader::hw_acceleration
 {

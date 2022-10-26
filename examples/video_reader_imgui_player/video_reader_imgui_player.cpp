@@ -2,7 +2,7 @@
  * example: 	video_player_imgui
  * author:		Stefano Lusardi
  * date:		Jun 2022
- * description:	Example to show how to integrate cv::video_reader in a simple video player based on OpenGL (using GLFW). 
+ * description:	Example to show how to integrate vio::video_reader in a simple video player based on OpenGL (using GLFW). 
  * 				Single threaded: Main thread decodes and draws subsequent frames.
  * 				Note that this serves only as an example, as in real world application 
  * 				you might want to handle decoding and rendering on separate threads (see any video_player_xxx_multi_thread).
@@ -34,11 +34,11 @@ double get_elapsed_time()
 int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
-	vc::video_reader vc;
+	vio::video_reader vc;
 	const auto video_path = "../../../../tests/data/testsrc_120sec_30fps.mkv";
 	// const auto video_path = "../../../../tests/data/testsrc_10sec_30fps.mkv";
 
-	if (!vc.open(video_path, vc::decode_support::SW))
+	if (!vc.open(video_path, vio::decode_support::SW))
 	{
 		std::cout << "Unable to open video: " << video_path << std::endl;
 		return 1;

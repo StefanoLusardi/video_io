@@ -17,7 +17,7 @@ struct AVFrame;
 struct SwsContext;
 struct AVDictionary;
 
-namespace vc
+namespace vio
 {
 struct raw_frame;
 enum class decode_support { none, SW, HW };

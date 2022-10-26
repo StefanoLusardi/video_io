@@ -1,11 +1,7 @@
 set(TARGET_NAME video_reader_imgui_player)
 
 add_executable(${TARGET_NAME}
-	src/application.cpp
-	src/application.hpp
-	src/main_window.cpp
-	src/main_window.hpp
-	src/main.cpp
+	video_reader_imgui_player.cpp
 	
 	${CMAKE_BINARY_DIR}/bindings/imgui_impl_glfw.cpp
 	${CMAKE_BINARY_DIR}/bindings/imgui_impl_glfw.h
@@ -21,7 +17,7 @@ target_compile_features(${TARGET_NAME} PUBLIC cxx_std_17)
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_BINARY_DIR}/bindings)
 
 target_link_libraries(${TARGET_NAME}
-	PRIVATE tiny_video_decoder
+	PRIVATE video_io
 	PRIVATE imgui::imgui
 	PRIVATE glfw
 )

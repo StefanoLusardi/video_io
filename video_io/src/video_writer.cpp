@@ -214,7 +214,7 @@ bool video_writer::encode(AVFrame* frame)
     {
         log_error("avcodec_send_frame", vc::logger::get().err2str(r));
         return false;
-    }   
+    }
 
     while (true)
     {        

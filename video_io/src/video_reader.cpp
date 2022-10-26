@@ -17,8 +17,7 @@ extern "C"
 namespace vc
 {
 video_reader::video_reader() noexcept
-    : _is_opened{ false }
-    , _hw{std::make_unique<hw_acceleration>()}
+: _is_opened{ false }
 {
     init(); 
     av_log_set_level(0);
@@ -61,9 +60,14 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
     log_info("HW acceleration", (decode_preference == decode_support::HW ? "required" : "not required"));
 
     if(decode_preference == decode_support::HW)
+    {
+        _hw = std::make_unique<hw_acceleration>();
         _decode_support = _hw->init();
+    }
     else
+    {
         _decode_support = decode_support::SW;
+    }
 
     if (_format_ctx = avformat_alloc_context(); !_format_ctx)
     {
@@ -249,57 +253,85 @@ auto video_reader::get_fps() const -> std::optional<double>
     return std::make_optional(fps);
 }
 
-bool video_reader::is_error(const char* func_name, const int error) const
+bool video_reader::decode(AVPacket *packet)
 {
-    if(AVERROR_EOF == error) 
+    if(auto r = av_read_frame(_format_ctx, packet); r < 0)
     {
-        log_info(func_name, vc::logger::get().err2str(error));
+        log_error("av_read_frame", vc::logger::get().err2str(r));
         return false;
     }
-    
-    log_error(func_name, vc::logger::get().err2str(error));  
-    return true;    
-}
 
-bool video_reader::decode()
-{
     while(true)
     {
-        av_packet_unref(_packet);
-        if(auto r = av_read_frame(_format_ctx, _packet); r < 0)
+        if (packet->stream_index != _stream_index)
         {
-            if (AVERROR(EAGAIN) == r)
-                continue; 
-
-            if(is_error("av_read_frame", r))
-                return false;
+            av_packet_unref(packet);
+            continue;
         }
 
-        if (_packet->stream_index != _stream_index)
-            continue;
-
-        if (auto r = avcodec_send_packet(_codec_ctx, _packet); r < 0)
+        if (auto r = avcodec_send_packet(_codec_ctx, packet); r < 0)
         {
-            if (AVERROR(EAGAIN) == r)
-                continue; 
-            
-            if(is_error("avcodec_send_packet", r))
-                return false;
+            log_error("avcodec_send_packet", r);
+            av_packet_unref(packet);
+            return false;
         }
 
         if (auto r = avcodec_receive_frame(_codec_ctx, _src_frame); r < 0)
         {
-            if (AVERROR(EAGAIN) == r)                         
+            if (AVERROR(EAGAIN) == r)
                 continue; 
             
+            av_packet_unref(packet);
             log_info("avcodec_receive_frame", vc::logger::get().err2str(r));
-            // release();
             return false;
         }
         
+        av_packet_unref(packet);
         return true;
     }
 }
+
+/*
+        decode(nullptr);
+
+bool video_reader::decode(AVPacket *packet)
+{
+    if(auto r = av_read_frame(_format_ctx, _packet); r < 0)
+    {
+        log_error("av_read_frame", vc::logger::get().err2str(r));
+        return false;
+    }
+
+    while(true)
+    {
+        if (_packet->stream_index != _stream_index)
+        {
+            av_packet_unref(_packet);
+            continue;
+        }
+
+        if (auto r = avcodec_send_packet(_codec_ctx, _packet); r < 0)
+        {        
+            log_error("avcodec_send_packet", r);
+            return false;
+        }
+
+        if (auto r = avcodec_receive_frame(_codec_ctx, _src_frame); r < 0)
+        {
+            if(r == AVERROR_EOF || r == AVERROR(EAGAIN))
+            {
+                av_packet_unref(_packet);
+                continue;
+            }
+
+            return false;
+        }
+    }
+
+    av_packet_unref(_packet);
+    return true;
+}
+*/
 
 bool video_reader::copy_hw_frame()
 {
@@ -325,8 +357,14 @@ bool video_reader::copy_hw_frame()
     return true;
 }
 
-bool video_reader::convert()
-{
+bool video_reader::convert(uint8_t** data)
+{   
+    if(_decode_support == decode_support::HW)
+    {
+        if(!copy_hw_frame())
+            return false;
+    }
+
     if (!_sws_ctx)
     {
         _sws_ctx = sws_getCachedContext(_sws_ctx,
@@ -345,6 +383,11 @@ bool video_reader::convert()
     sws_scale(_sws_ctx, _tmp_frame->data, _tmp_frame->linesize,
         0, _codec_ctx->height, _dst_frame->data, _dst_frame->linesize);
 
+    *data = _dst_frame->data[0];
+
+    const auto time_base = _format_ctx->streams[_stream_index]->time_base;
+    const auto pts = _tmp_frame->best_effort_timestamp * static_cast<double>(time_base.num) / static_cast<double>(time_base.den);
+
     return true;
 }
 
@@ -353,34 +396,32 @@ bool video_reader::read(uint8_t** data)
     if(!_is_opened)
         return false;
 
-    if(!decode())
+    if(!decode(_packet))
         return false;
 
-    if(_decode_support == decode_support::HW)
-        if(!copy_hw_frame())
-            return false;
-
-    if(!convert())
+    if(!convert(data))
         return false;
 
-    *data = _dst_frame->data[0];
     return true;
 }
 
 bool video_reader::read(raw_frame* frame)
 {
-    if(!decode())
+    if(!_is_opened)
         return false;
+    
+    // if(!decode())
+    //     return false;
 
-    if(!copy_hw_frame())
-        return false;
+    // if(!copy_hw_frame())
+    //     return false;
 
-    _dst_frame->data[0] = frame->data.data();
-    if(!convert())
-        return false;
+    // _dst_frame->data[0] = frame->data.data();
+    // if(!convert())
+    //     return false;
 
-    const auto time_base = _format_ctx->streams[_stream_index]->time_base;
-    frame->pts = _tmp_frame->best_effort_timestamp * static_cast<double>(time_base.num) / static_cast<double>(time_base.den);
+    // const auto time_base = _format_ctx->streams[_stream_index]->time_base;
+    // frame->pts = _tmp_frame->best_effort_timestamp * static_cast<double>(time_base.num) / static_cast<double>(time_base.den);
     
     return true;
 }
@@ -416,11 +457,14 @@ bool video_reader::release()
     if(_dst_frame)
         av_frame_free(&_dst_frame);
 
-    if(_decode_support == decode_support::HW && _tmp_frame)
+    if(_tmp_frame && _decode_support == decode_support::HW)
         av_frame_free(&_tmp_frame);
 
     init();
-    _hw->release();
+
+    if(_decode_support == decode_support::HW)
+        _hw->release();
+
     return true;
 }
 

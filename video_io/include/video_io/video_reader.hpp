@@ -44,11 +44,10 @@ public:
     auto get_fps() const -> std::optional<double>;
 
 protected:
-    bool is_error(const char* func_name, const int error) const;
     void init();
-    bool decode();
+    bool decode(AVPacket *packet);
+    bool convert(uint8_t** data);
     bool copy_hw_frame();
-    bool convert();
 
 private:
     bool _is_opened;

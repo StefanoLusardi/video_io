@@ -16,21 +16,18 @@ conan install . \
     --settings build_type=$BUILD_TYPE \
     --settings compiler=$COMPILER \
     --settings compiler.version=$COMPILER_VERSION \
-    --build missing \
-    --update
+    --build missing
 
 conan install tests \
     --install-folder build/$BUILD_TYPE/modules \
     --settings build_type=$BUILD_TYPE \
     --settings compiler=$COMPILER \
     --settings compiler.version=$COMPILER_VERSION \
-    --build missing \
-    --update
+    --build missing
 
 conan install examples \
     --install-folder build/$BUILD_TYPE/modules \
     --settings build_type=$BUILD_TYPE \
     --settings compiler=$COMPILER \
     --settings compiler.version=$COMPILER_VERSION \
-    --build missing \
-    --update
+    --build missing

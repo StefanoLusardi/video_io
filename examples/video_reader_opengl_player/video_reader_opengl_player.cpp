@@ -2,13 +2,12 @@
  * example: 	video_player_opengl
  * author:		Stefano Lusardi
  * date:		Jun 2021
- * description:	Example to show how to integrate cv::video_reader in a simple video player based on OpenGL (using GLFW). 
+ * description:	Example to show how to integrate vio::video_reader in a simple video player based on OpenGL (using GLFW). 
  * 				Single threaded: Main thread decodes and draws subsequent frames.
  * 				Note that this serves only as an example, as in real world application 
  * 				you might want to handle decoding and rendering on separate threads (see any video_player_xxx_multi_thread).
 */
 
-#include <memory>
 #include <iostream>
 #include <thread>
 #include <atomic>
@@ -31,13 +30,13 @@ double get_elapsed_time()
 int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
-	vio::video_reader vc;
+	vio::video_reader v;
 	const auto video_path = "testsrc.mp4";
 
-	vc.open(video_path, vio::decode_support::SW);
+	v.open(video_path, vio::decode_support::SW);
 
-	const auto fps = vc.get_fps();
-	const auto size = vc.get_frame_size();
+	const auto fps = v.get_fps();
+	const auto size = v.get_frame_size();
 	const auto [frame_width, frame_height] = size.value();
 
 	if (!glfwInit())
@@ -78,13 +77,13 @@ int main(int argc, char **argv)
 	glOrtho(0, window_width, window_height, 0, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 
-	std::unique_ptr<vio::raw_frame> frame;
+	std::unique_ptr<vio::simple_frame> frame;
 	while (!glfwWindowShouldClose(window))
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		frame = std::make_unique<vio::raw_frame>();
-		if (!vc.read(frame.get()))
+		frame = std::make_unique<vio::simple_frame>();
+		if (!v.read(frame.get()))
 		{
 			total_end_time = std::chrono::high_resolution_clock::now();
 			std::cout << "Couldn't load video frame" << std::endl;
@@ -122,7 +121,7 @@ int main(int argc, char **argv)
 
 	std::cout << "Decode time: " << std::chrono::duration_cast<std::chrono::milliseconds>(total_end_time - total_start_time).count() << "ms" << std::endl;
 	
-	vc.release();
+	v.release();
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

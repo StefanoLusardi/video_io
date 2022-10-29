@@ -1,7 +1,7 @@
 [requires]
 imgui/1.87
 glfw/3.3.7
-#opencv/4.5.5 # conflicts with ffmpeg 5.0
+opencv/4.5.5
 
 [generators]
 cmake_find_package
@@ -9,8 +9,8 @@ cmake_find_package
 [options]
 
 [imports]
-./res/bindings, imgui_impl_glfw.h -> ../bindings
-./res/bindings, imgui_impl_glfw.cpp -> ../bindings
-./res/bindings, imgui_impl_opengl3.h -> ../bindings
-./res/bindings, imgui_impl_opengl3.cpp -> ../bindings
-./res/bindings, imgui_impl_opengl3_loader.h  -> ../bindings
+./res/bindings, imgui_impl_glfw.h -> ../../bindings
+./res/bindings, imgui_impl_glfw.cpp -> ../../bindings
+./res/bindings, imgui_impl_opengl3.h -> ../../bindings
+./res/bindings, imgui_impl_opengl3.cpp -> ../../bindings
+./res/bindings, imgui_impl_opengl3_loader.h  -> ../../bindings

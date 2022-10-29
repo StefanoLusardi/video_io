@@ -41,7 +41,7 @@ static void get_frame_data(AVFrame *pict, int frame_index, int width, int height
 
 void record_n_frames(const char* format)
 {
-    vio::video_writer vw;
+    vio::video_writer v;
 
     const int num_frames_to_write = 300;
 	const auto video_path = std::string("out_" + std::to_string(num_frames_to_write) + "_frames" + format);
@@ -49,7 +49,7 @@ void record_n_frames(const char* format)
 	const auto width = 640;
 	const auto height = 480;
 
-	vw.open(video_path, width, height, fps);
+	v.open(video_path, width, height, fps);
 
     const auto frame_size = width * height * 3;
     std::array<uint8_t, frame_size> frame_data = { };
@@ -58,15 +58,15 @@ void record_n_frames(const char* format)
 	while(num_written_frames < num_frames_to_write)
 	{
         frame_data.fill(static_cast<uint8_t>(num_written_frames));
-        if (!vw.write(frame_data.data()))
+        if (!v.write(frame_data.data()))
             break;
 
         num_written_frames++;
 	}
 
-    vw.save();
+    v.save();
 
-    vw.check(video_path);
+    v.check(video_path);
 
     const float num_written_seconds = static_cast<float>(num_frames_to_write) / fps;
 	std::cout << video_path << "\n"
@@ -78,7 +78,7 @@ void record_n_frames(const char* format)
 
 void record_n_seconds(const char* format)
 {
-    vio::video_writer vw;
+    vio::video_writer v;
 
     const int num_seconds_to_write = 10;
 	const auto video_path = std::string("out_" + std::to_string(num_seconds_to_write) + "_seconds" + format);
@@ -86,7 +86,7 @@ void record_n_seconds(const char* format)
 	const auto width = 640;
 	const auto height = 480;
 
-	vw.open(video_path, width, height, fps, num_seconds_to_write);
+	v.open(video_path, width, height, fps, num_seconds_to_write);
 
     const auto frame_size = width * height * 3;
     std::array<uint8_t, frame_size> frame_data = { };
@@ -95,13 +95,13 @@ void record_n_seconds(const char* format)
 	while(true)
 	{
         frame_data.fill(static_cast<uint8_t>(num_written_frames));
-        if (!vw.write(frame_data.data()))
+        if (!v.write(frame_data.data()))
             break;
         
         num_written_frames++;
 	}
 
-    vw.save();
+    v.save();
 	
     std::cout << video_path << "\n"
         << " - Seconds: " << num_seconds_to_write << "\n"
@@ -114,7 +114,7 @@ int main(int argc, char** argv)
 {
     std::vector<const char *> formats =
     {
-        ".wat",
+        ".mp4",
         // ".mpg",
         // ".avi",
     };

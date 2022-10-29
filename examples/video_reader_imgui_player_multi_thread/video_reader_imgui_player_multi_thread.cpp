@@ -2,7 +2,7 @@
  * example: 	video_player_imgui
  * author:		Stefano Lusardi
  * date:		Jun 2022
- * description:	Example to show how to integrate cv::video_reader in a simple video player based on OpenGL (using GLFW). 
+ * description:	Example to show how to integrate vio::video_reader in a simple video player based on OpenGL (using GLFW). 
  * 				Single threaded: Main thread decodes and draws subsequent frames.
  * 				Note that this serves only as an example, as in real world application 
  * 				you might want to handle decoding and rendering on separate threads (see any video_player_xxx_multi_thread).
@@ -35,18 +35,18 @@ double get_elapsed_time()
 int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
-	vio::video_reader vc;
+	vio::video_reader v;
 	// const auto video_path = "../../../tests/data/testsrc_120sec_30fps.mkv";
 	const auto video_path = "../../../tests/data/testsrc_10sec_30fps.mkv";
 
-	if (!vc.open(video_path, vio::decode_support::SW))
+	if (!v.open(video_path, vio::decode_support::SW))
 	{
 		std::cout << "Unable to open video: " << video_path << std::endl;
 		return 1;
 	}
 
-	const auto fps = vc.get_fps();
-	const auto size = vc.get_frame_size();
+	const auto fps = v.get_fps();
+	const auto size = v.get_frame_size();
 	const auto [frame_width, frame_height] = size.value();
 
 	if (!glfwInit())
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
 	// glOrtho(0, window_width, window_height, 0, -1, 1);
 	// glMatrixMode(GL_MODELVIEW);
 
-	std::unique_ptr<vio::raw_frame> frame;
+	std::unique_ptr<vio::simple_frame> frame;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -120,13 +120,8 @@ int main(int argc, char **argv)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-		// frame = std::make_unique<vio::raw_frame>();
-
 		uint8_t* frame_data = {};
-		
-		// if (!vc.read(frame.get()))
-		
-		if (!vc.read(&frame_data))
+		if (!v.read(&frame_data))
 		{
 			total_end_time = std::chrono::high_resolution_clock::now();
 			std::cout << "Couldn't load video frame" << std::endl;
@@ -172,51 +167,9 @@ int main(int argc, char **argv)
         glfwSwapBuffers(window);
     }
 
-/*
-	while (!glfwWindowShouldClose(window))
-	{
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		frame = std::make_unique<vio::raw_frame>();
-		if (!vc.read(frame.get()))
-		{
-			total_end_time = std::chrono::high_resolution_clock::now();
-			std::cout << "Couldn't load video frame" << std::endl;
-			std::cout << "Video finished" << std::endl;
-			break;
-		}
-
-		if (const auto timeout = frame->pts - get_elapsed_time(); timeout > 0.0)
-			std::this_thread::sleep_for(std::chrono::duration<double>(timeout));
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame_width, frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame->data.data());
-
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, tex_handle);
-		glBegin(GL_QUADS);
-
-		glTexCoord2d(0, 0);
-		glVertex2i(0, 0);
-
-		glTexCoord2d(1, 0);
-		glVertex2i(frame_width, 0);
-
-		glTexCoord2d(1, 1);
-		glVertex2i(frame_width, frame_height);
-
-		glTexCoord2d(0, 1);
-		glVertex2i(0, frame_height);
-
-		glEnd();
-		glDisable(GL_TEXTURE_2D);
-
-		glfwSwapBuffers(window);
-		glfwPollEvents();
-	}
-*/
 	std::cout << "Decode time: " << std::chrono::duration_cast<std::chrono::milliseconds>(total_end_time - total_start_time).count() << "ms" << std::endl;
 	
-	vc.release();
+	v.release();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

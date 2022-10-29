@@ -19,7 +19,7 @@ struct AVDictionary;
 
 namespace vio
 {
-struct raw_frame;
+struct simple_frame;
 enum class decode_support { none, SW, HW };
 
 class API_VIDEO_IO video_reader
@@ -33,8 +33,8 @@ public:
 
     bool open(const std::string& video_path, decode_support decode_preference = decode_support::none);
     bool is_opened() const;
-    bool read(uint8_t** data);
-    bool read(raw_frame* frame);
+    bool read(uint8_t** data, double* pts = nullptr);
+    bool read(simple_frame* frame);
     bool release();
     
     auto get_frame_count() const -> std::optional<int>;
@@ -46,7 +46,7 @@ public:
 protected:
     void init();
     bool decode(AVPacket *packet);
-    bool convert(uint8_t** data);
+    bool convert(uint8_t** data, double* pts);
     bool copy_hw_frame();
 
 private:

@@ -2,18 +2,16 @@
  * example: 	video_player_opencv_multi_thread
  * author:		Stefano Lusardi
  * date:		Jun 2021
- * description:	Example to show how to integrate cv::video_reader in a simple video player based on OpenCV framework. 
+ * description:	Example to show how to integrate vio::video_reader in a simple video player based on OpenCV framework. 
  * 				Multi threaded: one (background) thread decodes and enqueue frames, the other (main) dequeues and renders them in order.
  * 				For simpler examples(single thread) you might want to have a look at any video_player_xxx example (no multi_thread).
 */
 
-#include <memory>
 #include <iostream>
 #include <thread>
 
-// #define VIDEO_CAPTURE_LOG_ENABLED 1
 #include <video_io/video_reader.hpp> 
-#include <opencv2/highgui.hpp> // OpenCV GUI
+#include <opencv2/highgui.hpp>
 
 void log_info(const std::string& str)  { std::cout << "[  INFO ] " << str << std::endl; }
 void log_error(const std::string& str) { std::cout << "[ ERROR ] " << str << std::endl; }
@@ -35,24 +33,24 @@ int main(int argc, char** argv)
 		std::cout << "Using video file: " << video_path << std::endl;
 	}
 
-	vio::video_reader vc;
-	vc.set_log_callback(log_info, vio::log_level::info);
-	vc.set_log_callback(log_error, vio::log_level::error);
+	vio::video_reader v;
+	// v.set_log_callback(log_info, vio::log_level::info);
+	// v.set_log_callback(log_error, vio::log_level::error);
 
-	if(!vc.open(video_path, vio::decode_support::HW))
+	if(!v.open(video_path, vio::decode_support::HW))
 	{
 		std::cout << "Unable to open " << video_path << std::endl;
 		return -1;
 	}
 
-	const auto size = vc.get_frame_size(); 
+	const auto size = v.get_frame_size(); 
 	if(!size)
 	{
 		std::cout << "Unable to retrieve frame size from " << video_path << std::endl;
 		return -1;
 	}
 
-	const auto fps = vc.get_fps();
+	const auto fps = v.get_fps();
 	if(!fps)
 	{
 		std::cout << "Unable to retrieve FPS from " << video_path << std::endl;
@@ -65,7 +63,7 @@ int main(int argc, char** argv)
 
 	const auto frame_time = std::chrono::nanoseconds(static_cast<int>(1'000'000'000/fps.value()));
 	
-	const std::string window_title = "FFMPEG Video Player with OpenCV UI";
+	const std::string window_title = "vio::video_reader";
 	cv::namedWindow(window_title);
 
 	int n_frames = 0;
@@ -73,7 +71,7 @@ int main(int argc, char** argv)
 
 	while(true)
 	{
-		if(!vc.read(&frame.data))
+		if(!v.read(&frame.data))
 			break;
 
 		cv::imshow(window_title, frame);
@@ -85,7 +83,7 @@ int main(int argc, char** argv)
 	std::cout << "Decode time: " << std::chrono::duration_cast<std::chrono::milliseconds>(total_end_time - total_start_time).count() << "ms" << std::endl;
 	std::cout << "Decoded Frames: " << n_frames << std::endl;
 
-	vc.release();
+	v.release();
 	cv::destroyAllWindows();
 	
 	return 0;

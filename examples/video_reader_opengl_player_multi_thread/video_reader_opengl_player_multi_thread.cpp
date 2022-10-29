@@ -2,38 +2,36 @@
  * example: 	video_player_opengl_multi_thread
  * author:		Stefano Lusardi
  * date:		Jun 2021
- * description:	Example to show how to integrate cv::video_reader in a simple video player based on OpenGL (using GLFW). 
+ * description:	Example to show how to integrate vio::video_reader in a simple video player based on OpenGL (using GLFW).
  * 				Multi threaded: one (background) thread decodes and enqueue frames, the other (main) dequeues and renders them in order.
  * 				For simpler examples(single thread) you might want to have a look at any video_player_xxx example (no multi_thread).
 */
 
-#include <memory>
 #include <iostream>
 #include <thread>
 #include <atomic>
-#include <cstring>
 
 #include <video_io/video_reader.hpp>
-#include <video_reader/frame_queue.hpp>
-#include <video_reader/raw_frame.hpp>
+#include "../utils/frame_queue.hpp"
+#include "../utils/simple_frame.hpp"
 
 #include <GLFW/glfw3.h>
 
 using namespace std::chrono_literals;
 
-void decode_thread(vio::video_reader& vc, vio::frame_queue<std::unique_ptr<vio::raw_frame>>& frame_queue)
+void decode_thread(vio::video_reader& v, vio::examples::utils::frame_queue<vio::examples::utils::simple_frame>& frame_queue)
 {
 	int frames_decoded = 0;
 	while(true)
 	{
-		auto frame = std::make_unique<vio::raw_frame>();
-		if(!vc.read(frame.get()))
+		vio::examples::utils::simple_frame frame;
+		if(!v.read(&frame.data))
 		{
 			std::cout << "Video finished" << std::endl;
 			std::cout << "frames decoded: " << frames_decoded << std::endl;
 			break;
 		}
-		
+
 		frame_queue.put(std::move(frame));
 		++frames_decoded;
 	}
@@ -56,7 +54,6 @@ bool setup_opengl(GLFWwindow** window, GLuint& texture_handle, int frame_width, 
 
 	glfwMakeContextCurrent(*window);
 
-	// Generate texture
 	glGenTextures(1, &texture_handle);
 	glBindTexture(GL_TEXTURE_2D, texture_handle);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -83,7 +80,6 @@ void draw_frame(GLFWwindow *window, GLuint& texture_handle, int frame_width, int
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame_width, frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame_data);
 
-	// Render whatever you want
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, texture_handle);
 	glBegin(GL_QUADS);
@@ -117,17 +113,21 @@ double get_elapsed_time()
 int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
-	vio::video_reader vc;
-	const auto video_path = "../../../../tests/data/testsrc_10sec_30fps.mkv";
+	vio::video_reader v;
+	const auto video_path = "../../../../tests/data/testsrc_120sec_30fps.mkv";
 
-	vc.open(video_path, vio::decode_support::HW);
+	if (!v.open(video_path))
+	{
+		std::cout << "Unable to open video: " << video_path << std::endl;
+		return 1;
+	}
 
-	const auto fps = vc.get_fps();
-	const auto frame_size = vc.get_frame_size();
+	const auto fps = v.get_fps();
+	const auto frame_size = v.get_frame_size();
 	const auto [frame_width, frame_height] = frame_size.value();
 
-	vio::frame_queue<std::unique_ptr<vio::raw_frame>> frame_queue(3);
-	std::thread t(&decode_thread, std::ref(vc), std::ref(frame_queue));
+	vio::examples::utils::frame_queue<vio::examples::utils::simple_frame> frame_queue(30);
+	std::thread t(&decode_thread, std::ref(v), std::ref(frame_queue));
 
 	GLFWwindow *window = nullptr;
 	GLuint texture_handle;
@@ -136,11 +136,11 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 
 	int frames_shown = 0;
-	std::unique_ptr<vio::raw_frame> frame;
+	vio::examples::utils::simple_frame frame;
 
 	std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double>> start_time = std::chrono::steady_clock::now();
 	std::chrono::duration<double> elapsed_time(0.0);
-	
+
 	auto total_start_time = std::chrono::high_resolution_clock::now();
 	auto total_end_time = std::chrono::high_resolution_clock::now();
 
@@ -149,19 +149,19 @@ int main(int argc, char **argv)
 		if(!frame_queue.try_get(&frame))
 			break;
 
-		if (const auto timeout = frame->pts - get_elapsed_time(); timeout > 0.0)
+		if (const auto timeout = frame.pts - get_elapsed_time(); timeout > 0.0)
 			std::this_thread::sleep_for(std::chrono::duration<double>(timeout));
 
-		draw_frame(window, texture_handle, frame_width, frame_height, frame->data.data());
+		draw_frame(window, texture_handle, frame_width, frame_height, frame.data);
 		++frames_shown;
 	}
 
 	total_end_time = std::chrono::high_resolution_clock::now();
 	std::cout << "Decode time: " << std::chrono::duration_cast<std::chrono::milliseconds>(total_end_time - total_start_time).count() << "ms" << std::endl;
 	std::cout << "Frames shown:   " << frames_shown << std::endl;
-	
+
 	t.join();
-	vc.release();
+	v.release();
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

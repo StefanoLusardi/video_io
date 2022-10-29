@@ -357,7 +357,7 @@ bool video_reader::copy_hw_frame()
     return true;
 }
 
-bool video_reader::convert(uint8_t** data)
+bool video_reader::convert(uint8_t** data, double* pts)
 {   
     if(_decode_support == decode_support::HW)
     {
@@ -385,13 +385,16 @@ bool video_reader::convert(uint8_t** data)
 
     *data = _dst_frame->data[0];
 
-    const auto time_base = _format_ctx->streams[_stream_index]->time_base;
-    const auto pts = _tmp_frame->best_effort_timestamp * static_cast<double>(time_base.num) / static_cast<double>(time_base.den);
+    if(pts)
+    {
+        const auto time_base = _format_ctx->streams[_stream_index]->time_base;
+        *pts = _tmp_frame->best_effort_timestamp * static_cast<double>(time_base.num) / static_cast<double>(time_base.den);
+    }
 
     return true;
 }
 
-bool video_reader::read(uint8_t** data)
+bool video_reader::read(uint8_t** data, double* pts)
 {
     if(!_is_opened)
         return false;
@@ -399,13 +402,13 @@ bool video_reader::read(uint8_t** data)
     if(!decode(_packet))
         return false;
 
-    if(!convert(data))
+    if(!convert(data, pts))
         return false;
 
     return true;
 }
 
-bool video_reader::read(raw_frame* frame)
+bool video_reader::read(simple_frame* frame)
 {
     if(!_is_opened)
         return false;

@@ -8,11 +8,9 @@ project (video_io
     HOMEPAGE_URL "https://github.com/StefanoLusardi/video_io"
 )
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_BINARY_DIR}/modules)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(GNUInstallDirs)
 
-# option(VIDEO_IO_BUILD_SHARED "Build shared library" ON)
 option(VIDEO_IO_BUILD_TESTS "Build library unit tests" ON)
 option(VIDEO_IO_BUILD_EXAMPLES "Build library examples" ON)
 option(VIDEO_IO_BUILD_SANITIZERS "Build with sanitizers (address, undefined, memory, thread)" OFF)

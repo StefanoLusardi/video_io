@@ -34,18 +34,18 @@ double get_elapsed_time()
 int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
-	vio::video_reader vc;
+	vio::video_reader v;
 	const auto video_path = "../../../../tests/data/testsrc_120sec_30fps.mkv";
 	// const auto video_path = "../../../../tests/data/testsrc_10sec_30fps.mkv";
 
-	if (!vc.open(video_path, vio::decode_support::SW))
+	if (!v.open(video_path, vio::decode_support::SW))
 	{
 		std::cout << "Unable to open video: " << video_path << std::endl;
 		return 1;
 	}
 
-	const auto fps = vc.get_fps();
-	const auto size = vc.get_frame_size();
+	const auto fps = v.get_fps();
+	const auto size = v.get_frame_size();
 	const auto [frame_width, frame_height] = size.value();
 
 	if (!glfwInit())
@@ -110,7 +110,7 @@ int main(int argc, char **argv)
         ImGui::NewFrame();
 
 		uint8_t* frame_data = {};
-		if (!vc.read(&frame_data))
+		if (!v.read(&frame_data))
 		{
 			total_end_time = std::chrono::high_resolution_clock::now();
 			std::cout << "Video finished" << std::endl;
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
 
 	std::cout << "Decode time: " << std::chrono::duration_cast<std::chrono::milliseconds>(total_end_time - total_start_time).count() << "ms" << std::endl;
 	
-	vc.release();
+	v.release();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

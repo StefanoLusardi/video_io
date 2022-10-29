@@ -330,7 +330,7 @@ bool video_writer::write(const uint8_t* data)
     return true;
 }
 
-bool video_writer::write(raw_frame* frame)
+bool video_writer::write(simple_frame* frame)
 {
     if(!_is_opened)
         return false;

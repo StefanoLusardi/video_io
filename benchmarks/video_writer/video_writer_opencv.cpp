@@ -2,7 +2,7 @@
  * banchmark: 	video_writer_opencv
  * author:		Stefano Lusardi
  * date:		Aug 2022
- * description:	Comparison between OpenCV::VideoCapture and cv::video_reader. 
+ * description:	Comparison between OpenCV::VideoCapture and vio::video_reader. 
 */
 
 #include <iostream>
@@ -103,7 +103,7 @@ public:
 
 protected:
 	vio::video_reader _vc;
-	vio::raw_frame _frame;
+	vio::simple_frame _frame;
 
     void Initialize(CppBenchmark::Context& context) override
 	{

@@ -2,13 +2,12 @@
  * example: 	video_player_opencv
  * author:		Stefano Lusardi
  * date:		Jun 2021
- * description:	Example to show how to integrate cv::video_reader in a simple video player based on OpenCV framework. 
+ * description:	Example to show how to integrate vio::video_reader in a simple video player based on OpenCV framework. 
  * 				Single threaded: Main thread decodes and draws subsequent frames.
  * 				Note that this serves only as an example, as in real world application 
  * 				you might want to handle decoding and rendering on separate threads (see any video_player_xxx_multi_thread).
 */
 
-#include <memory>
 #include <iostream>
 #include <thread>
 
@@ -35,24 +34,24 @@ int main(int argc, char** argv)
 		std::cout << "Using video file: " << video_path << std::endl;
 	}
 
-	vio::video_reader vc;
-	vc.set_log_callback(cb_log_info, vio::log_level::info);
-	vc.set_log_callback(cb_log_error, vio::log_level::error);
+	vio::video_reader v;
+	// v.set_log_callback(cb_log_info, vio::log_level::info);
+	// v.set_log_callback(cb_log_error, vio::log_level::error);
 
-	if(!vc.open(video_path, vio::decode_support::HW))
+	if(!v.open(video_path, vio::decode_support::HW))
 	{
 		std::cout << "Unable to open " << video_path << std::endl;
 		return -1;
 	}
 
-	const auto size = vc.get_frame_size(); 
+	const auto size = v.get_frame_size(); 
 	if(!size)
 	{
 		std::cout << "Unable to retrieve frame size from " << video_path << std::endl;
 		return -1;
 	}
 
-	const auto fps = vc.get_fps();
+	const auto fps = v.get_fps();
 	if(!fps)
 	{
 		std::cout << "Unable to retrieve FPS from " << video_path << std::endl;
@@ -73,7 +72,7 @@ int main(int argc, char** argv)
 
 	while(true)
 	{
-		if(!vc.read(&frame.data))
+		if(!v.read(&frame.data))
 			break;
 
 		cv::imshow(window_title, frame);
@@ -85,7 +84,7 @@ int main(int argc, char** argv)
 	std::cout << "Decode time: " << std::chrono::duration_cast<std::chrono::milliseconds>(total_end_time - total_start_time).count() << "ms" << std::endl;
 	std::cout << "Decoded Frames: " << n_frames << std::endl;
 
-	vc.release();
+	v.release();
 	cv::destroyAllWindows();
 	
 	return 0;

@@ -19,7 +19,7 @@ struct AVStream;
 
 namespace vio
 {
-struct raw_frame;
+struct simple_frame;
 
 class API_VIDEO_IO video_writer
 {
@@ -34,7 +34,7 @@ public:
     bool open(const std::string& video_path, int width, int height, const int fps, const int duration);
     bool is_opened() const;
     bool write(const uint8_t* data);
-    bool write(raw_frame* frame);
+    bool write(simple_frame* frame);
     bool release();
     bool save();
     

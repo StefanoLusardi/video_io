@@ -8,10 +8,11 @@ add_executable(${TARGET_NAME}
     src/test_video_writer.cpp
 )
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/modules/tests)
 find_package(GTest)
 
 target_compile_features(${TARGET_NAME} PUBLIC cxx_std_17)
-target_link_libraries(${TARGET_NAME} PRIVATE GTest::GTest PRIVATE video_io)
+target_link_libraries(${TARGET_NAME} PRIVATE GTest::GTest PRIVATE vio::video_io-static)
 
 include(GoogleTest)
 gtest_discover_tests(${TARGET_NAME})

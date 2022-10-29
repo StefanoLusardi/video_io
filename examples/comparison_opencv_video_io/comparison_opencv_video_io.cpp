@@ -1,5 +1,5 @@
 /**
- * example: 	simple_decode
+ * example: 	comparison_opencv_video_io
  * author:		Stefano Lusardi
  * date:		Jun 2021
  * description:	Comparison between OpenCV::VideoCapture and vio::video_reader. 
@@ -14,7 +14,6 @@
 #include <thread>
 
 #include <video_io/video_reader.hpp>
-// #include <video_reader/raw_frame.hpp>
 
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>

@@ -11,22 +11,22 @@ export CONAN_SYSREQUIRES_SUDO=0
 export CONAN_SYSREQUIRES_MODE=enabled
 export DEBIAN_FRONTEND=noninteractive
 
-conan install . \
-    --install-folder build/$BUILD_TYPE/modules \
+conan install video_io \
+    --install-folder build/$BUILD_TYPE/modules/video_io \
     --settings build_type=$BUILD_TYPE \
     --settings compiler=$COMPILER \
     --settings compiler.version=$COMPILER_VERSION \
     --build missing
 
 conan install tests \
-    --install-folder build/$BUILD_TYPE/modules \
+    --install-folder build/$BUILD_TYPE/modules/tests \
     --settings build_type=$BUILD_TYPE \
     --settings compiler=$COMPILER \
     --settings compiler.version=$COMPILER_VERSION \
     --build missing
 
 conan install examples \
-    --install-folder build/$BUILD_TYPE/modules \
+    --install-folder build/$BUILD_TYPE/modules/examples \
     --settings build_type=$BUILD_TYPE \
     --settings compiler=$COMPILER \
     --settings compiler.version=$COMPILER_VERSION \

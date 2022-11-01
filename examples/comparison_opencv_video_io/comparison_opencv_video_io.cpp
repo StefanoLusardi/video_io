@@ -30,7 +30,6 @@ void run_opencv(const char* video_path, const char* name)
 	const auto w = v.get(cv::CAP_PROP_FRAME_WIDTH);
 	const auto h = v.get(cv::CAP_PROP_FRAME_HEIGHT);
 	const auto fps = v.get(cv::CAP_PROP_FPS);
-	const auto sleep_time = 1;
 	cv::Mat frame(w, h, CV_8UC3);
 
 	cv::namedWindow(name);
@@ -39,7 +38,7 @@ void run_opencv(const char* video_path, const char* name)
 	while(v.read(frame))
 	{
 		cv::imshow(name, frame);
-		cv::waitKey(sleep_time);
+		cv::waitKey(1);
 	}
 	auto end = std::chrono::steady_clock::now();
 
@@ -61,7 +60,6 @@ void run_video_io(const char* video_path, const char* name, vio::decode_support 
 	const auto size = v.get_frame_size(); 
 	const auto [w, h] = size.value();
 	const auto fps = v.get_fps();
-	const auto sleep_time = 1;
 	cv::Mat frame(h, w, CV_8UC3);
 
 	cv::namedWindow(name);
@@ -70,7 +68,7 @@ void run_video_io(const char* video_path, const char* name, vio::decode_support 
 	while(v.read(&frame.data))
 	{
 		cv::imshow(name, frame);
-		cv::waitKey(sleep_time);
+		cv::waitKey(1);
 	}
 	auto end = std::chrono::steady_clock::now();
 	
@@ -82,8 +80,8 @@ void run_video_io(const char* video_path, const char* name, vio::decode_support 
 
 int main(int argc, char** argv)
 {
-	const auto video_path = "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4";
-	// const auto video_path = "../../../../tests/data/testsrc_120sec_30fps.mpg";
+	// const auto video_path = "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4";
+	const auto video_path = "../../../../tests/data/testsrc_120sec_30fps.mpg";
 	
 	std::thread opencv_thread([video_path]{ run_opencv(video_path, "OpenCV"); });
 	std::thread video_io_thread_sw([video_path]{ run_video_io(video_path, "video_io SW", vio::decode_support::SW); });

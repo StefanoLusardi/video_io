@@ -34,7 +34,6 @@ public:
     bool open(const std::string& video_path, int width, int height, const int fps, const int duration);
     bool is_opened() const;
     bool write(const uint8_t* data);
-    bool write(simple_frame* frame);
     bool release();
     bool save();
     

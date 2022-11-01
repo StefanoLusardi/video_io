@@ -34,7 +34,6 @@ public:
     bool open(const std::string& video_path, decode_support decode_preference = decode_support::none);
     bool is_opened() const;
     bool read(uint8_t** data, double* pts = nullptr);
-    bool read(simple_frame* frame);
     bool release();
     
     auto get_frame_count() const -> std::optional<int>;

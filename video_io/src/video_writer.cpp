@@ -328,20 +328,6 @@ bool video_writer::write(const uint8_t* data)
     return true;
 }
 
-bool video_writer::write(simple_frame* frame)
-{
-    if(!_is_opened)
-        return false;
-    
-    // if(!convert(frame))
-    //     return false;
-
-    // if(!encode())
-    //     return false;
-
-    return false;
-}
-
 bool video_writer::save()
 {
     if(!_is_opened)
@@ -418,7 +404,12 @@ bool video_writer::check(const std::string& video_path)
         return false;
     }
 
+#if LIBAVCODEC_VERSION_MAJOR <= 58
+    AVCodec* codec = nullptr;
+#elif LIBAVCODEC_VERSION_MAJOR >= 59
     const AVCodec* codec = nullptr;
+#endif
+
     int stream_index = av_find_best_stream(fmt_ctx, AVMediaType::AVMEDIA_TYPE_VIDEO, -1, -1, &codec, 0); 
     if (stream_index < 0)
     {

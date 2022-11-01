@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
 	vio::video_reader v;
-	const auto video_path = "../../../../tests/data/testsrc_120sec_30fps.mkv";
+	const auto video_path = "../../../../tests/data/testsrc_10sec_30fps.mkv";
 
 	if (!v.open(video_path))
 	{

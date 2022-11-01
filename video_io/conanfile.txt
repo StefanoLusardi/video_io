@@ -1,5 +1,6 @@
 [requires]
-ffmpeg/5.0
+#ffmpeg/5.0
+ffmpeg/4.4.3
 
 [generators]
 cmake_find_package

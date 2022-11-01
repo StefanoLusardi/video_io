@@ -35,6 +35,8 @@ void decode_thread(vio::video_reader& v, vio::examples::utils::frame_queue<vio::
 		frame_queue.put(std::move(frame));
 		++frames_decoded;
 	}
+
+	is_decoding_required = false;
 }
 
 bool setup_opengl(GLFWwindow** window, GLuint& texture_handle, int frame_width, int frame_height)
@@ -114,7 +116,7 @@ int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
 	vio::video_reader v;
-	const auto video_path = "../../../../tests/data/testsrc_120sec_30fps.mkv";
+	const auto video_path = "../../../../tests/data/testsrc_10sec_30fps.mkv";
 
 	if (!v.open(video_path))
 	{
@@ -147,7 +149,7 @@ int main(int argc, char **argv)
 
 	while (!glfwWindowShouldClose(window))
 	{
-		if(!frame_queue.try_get(&frame))
+		if(!frame_queue.try_get(&frame) && !is_decoding_required)
 			break;
 
 		if (const auto timeout = frame.pts - get_elapsed_time(); timeout > 0.0)

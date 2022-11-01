@@ -6,6 +6,11 @@ extern "C"
 #include <libavutil/hwcontext.h>
 }
 
+/*
+https://ffmpeg.org/doxygen/trunk/hw_decode_8c-example.html
+https://ffmpeg.org/doxygen/trunk/ffmpeg__hw_8c_source.html#l00317
+*/
+
 namespace vio
 {
 video_reader::hw_acceleration::hw_acceleration()

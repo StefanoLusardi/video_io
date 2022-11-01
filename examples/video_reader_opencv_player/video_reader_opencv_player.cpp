@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 		std::cout << "Missing video file path." << std::endl;
 		std::cout << "Usage: \nvideo_player_opencv <VIDEO_PATH>" << std::endl;
 		// video_path = "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov";
-		video_path = "../../../tests/data/testsrc_10sec_30fps.mkv";
+		video_path = "../../../../tests/data/testsrc_10sec_30fps.mkv";
 		std::cout << "Using default RTSP video stream: " << video_path << std::endl;
 	}
 	else
@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 	// v.set_log_callback(cb_log_info, vio::log_level::info);
 	// v.set_log_callback(cb_log_error, vio::log_level::error);
 
-	if(!v.open(video_path, vio::decode_support::HW))
+	if(!v.open(video_path, vio::decode_support::SW))
 	{
 		std::cout << "Unable to open " << video_path << std::endl;
 		return -1;
@@ -66,7 +66,6 @@ int main(int argc, char** argv)
 	cv::namedWindow(window_title);
 
 	int frames_shown = 0;
-	auto total_start_time = std::chrono::high_resolution_clock::now();
 
 	while(true)
 	{
@@ -78,8 +77,6 @@ int main(int argc, char** argv)
 		++frames_shown;
 	}
 
-	auto total_end_time = std::chrono::high_resolution_clock::now();
-	std::cout << "Decode time: " << std::chrono::duration_cast<std::chrono::milliseconds>(total_end_time - total_start_time).count() << "ms" << std::endl;
 	std::cout << "Frames shown:   " << frames_shown << std::endl;
 
 	v.release();

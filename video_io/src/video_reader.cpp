@@ -91,7 +91,13 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
         return false;
     }
 
+/* NOTE: this is a breaking change from ffmpeg v4.x to ffmpeg v5.x in function av_find_best_stream */
+#if LIBAVCODEC_VERSION_MAJOR <= 58
+    AVCodec* codec = nullptr;
+#elif LIBAVCODEC_VERSION_MAJOR >= 59
     const AVCodec* codec = nullptr;
+#endif
+
     if (_stream_index = av_find_best_stream(_format_ctx, AVMediaType::AVMEDIA_TYPE_VIDEO, -1, -1, &codec, 0); _stream_index < 0)
     {
         log_error("av_find_best_stream", vio::logger::get().err2str(_stream_index));
@@ -403,27 +409,6 @@ bool video_reader::read(uint8_t** data, double* pts)
     if(!convert(data, pts))
         return false;
 
-    return true;
-}
-
-bool video_reader::read(simple_frame* frame)
-{
-    if(!_is_opened)
-        return false;
-    
-    // if(!decode())
-    //     return false;
-
-    // if(!copy_hw_frame())
-    //     return false;
-
-    // _dst_frame->data[0] = frame->data.data();
-    // if(!convert())
-    //     return false;
-
-    // const auto time_base = _format_ctx->streams[_stream_index]->time_base;
-    // frame->pts = _tmp_frame->best_effort_timestamp * static_cast<double>(time_base.num) / static_cast<double>(time_base.den);
-    
     return true;
 }
 

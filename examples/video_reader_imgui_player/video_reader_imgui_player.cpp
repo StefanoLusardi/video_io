@@ -35,8 +35,7 @@ int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
 	vio::video_reader v;
-	const auto video_path = "../../../../tests/data/testsrc_120sec_30fps.mkv";
-	// const auto video_path = "../../../../tests/data/testsrc_10sec_30fps.mkv";
+	const auto video_path = "../../../../tests/data/testsrc_10sec_30fps.mkv";
 
 	if (!v.open(video_path, vio::decode_support::SW))
 	{
@@ -60,7 +59,7 @@ int main(int argc, char **argv)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-	GLFWwindow *window = glfwCreateWindow(frame_width, frame_height, "Video Player OpenGL", NULL, NULL);
+	GLFWwindow *window = glfwCreateWindow(frame_width, frame_height, "Video Player imgui", NULL, NULL);
 	if (!window)
 	{
 		std::cout << "Couldn't open window" << std::endl;

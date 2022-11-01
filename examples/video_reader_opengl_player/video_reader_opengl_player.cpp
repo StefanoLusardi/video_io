@@ -13,7 +13,7 @@
 #include <atomic>
 
 #include <video_io/video_reader.hpp>
-#include <video_io/raw_frame.hpp>
+#include "../utils/simple_frame.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -31,9 +31,13 @@ int main(int argc, char **argv)
 {
 	std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
 	vio::video_reader v;
-	const auto video_path = "testsrc.mp4";
+	const auto video_path = "../../../../tests/data/testsrc_120sec_30fps.mkv";
 
-	v.open(video_path, vio::decode_support::SW);
+	if (!v.open(video_path))
+	{
+		std::cout << "Unable to open video: " << video_path << std::endl;
+		return 1;
+	}
 
 	const auto fps = v.get_fps();
 	const auto size = v.get_frame_size();
@@ -54,9 +58,9 @@ int main(int argc, char **argv)
 
 	glfwMakeContextCurrent(window);
 
-	GLuint tex_handle;
-	glGenTextures(1, &tex_handle);
-	glBindTexture(GL_TEXTURE_2D, tex_handle);
+	GLuint texture_handle;
+	glGenTextures(1, &texture_handle);
+	glBindTexture(GL_TEXTURE_2D, texture_handle);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -77,27 +81,25 @@ int main(int argc, char **argv)
 	glOrtho(0, window_width, window_height, 0, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 
-	std::unique_ptr<vio::simple_frame> frame;
+	vio::examples::utils::simple_frame frame;
 	while (!glfwWindowShouldClose(window))
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		frame = std::make_unique<vio::simple_frame>();
-		if (!v.read(frame.get()))
+		if (!v.read(&frame.data, &frame.pts))
 		{
 			total_end_time = std::chrono::high_resolution_clock::now();
-			std::cout << "Couldn't load video frame" << std::endl;
 			std::cout << "Video finished" << std::endl;
 			break;
 		}
 
-		if (const auto timeout = frame->pts - get_elapsed_time(); timeout > 0.0)
+		if (const auto timeout = frame.pts - get_elapsed_time(); timeout > 0.0)
 			std::this_thread::sleep_for(std::chrono::duration<double>(timeout));
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame_width, frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame->data.data());
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame_width, frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame.data);
 
 		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, tex_handle);
+		glBindTexture(GL_TEXTURE_2D, texture_handle);
 		glBegin(GL_QUADS);
 
 		glTexCoord2d(0, 0);

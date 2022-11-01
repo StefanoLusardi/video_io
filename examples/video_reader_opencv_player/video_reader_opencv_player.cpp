@@ -62,12 +62,10 @@ int main(int argc, char** argv)
 	const auto [w, h] = size.value();
 	cv::Mat frame(h, w, CV_8UC3); 
 
-	const auto frame_time = std::chrono::nanoseconds(static_cast<int>(1'000'000'000/fps.value()));
-	
-	const std::string window_title = "FFMPEG Video Player with OpenCV UI";
+	const std::string window_title = "vio::video_reader";
 	cv::namedWindow(window_title);
 
-	int n_frames = 0;
+	int frames_shown = 0;
 	auto total_start_time = std::chrono::high_resolution_clock::now();
 
 	while(true)
@@ -77,12 +75,12 @@ int main(int argc, char** argv)
 
 		cv::imshow(window_title, frame);
 		cv::waitKey(1);
-		++n_frames;
+		++frames_shown;
 	}
 
 	auto total_end_time = std::chrono::high_resolution_clock::now();
 	std::cout << "Decode time: " << std::chrono::duration_cast<std::chrono::milliseconds>(total_end_time - total_start_time).count() << "ms" << std::endl;
-	std::cout << "Decoded Frames: " << n_frames << std::endl;
+	std::cout << "Frames shown:   " << frames_shown << std::endl;
 
 	v.release();
 	cv::destroyAllWindows();

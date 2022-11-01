@@ -1,6 +1,4 @@
 #include <video_io/video_writer.hpp>
-#include <video_io/raw_frame.hpp>
-
 #include "logger.hpp"
 
 extern "C"

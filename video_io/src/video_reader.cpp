@@ -1,6 +1,4 @@
 #include <video_io/video_reader.hpp>
-#include <video_io/raw_frame.hpp>
-
 #include "logger.hpp"
 #include "video_reader_hw.hpp"
 

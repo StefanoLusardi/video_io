@@ -14,7 +14,8 @@
 #include <atomic>
 
 #include <video_io/video_reader.hpp>
-#include <video_reader/raw_frame.hpp>
+#include "../utils/simple_frame.hpp"
+#include "../utils/frame_queue.hpp"
 
 #include <imgui.h>
 #include <GLFW/glfw3.h>

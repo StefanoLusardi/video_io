@@ -12,20 +12,20 @@
 #include <atomic>
 
 #include <video_io/video_reader.hpp>
-#include "../utils/frame_queue.hpp"
 #include "../utils/simple_frame.hpp"
+#include "../utils/frame_queue.hpp"
 
 #include <GLFW/glfw3.h>
 
 using namespace std::chrono_literals;
 
-void decode_thread(vio::video_reader& v, vio::examples::utils::frame_queue<vio::examples::utils::simple_frame>& frame_queue)
+void decode_thread(vio::video_reader& v, vio::examples::utils::frame_queue<vio::examples::utils::simple_frame>& frame_queue, bool& is_decoding_required)
 {
 	int frames_decoded = 0;
-	while(true)
+	while(is_decoding_required)
 	{
 		vio::examples::utils::simple_frame frame;
-		if(!v.read(&frame.data))
+		if(!v.read(&frame.data, &frame.pts))
 		{
 			std::cout << "Video finished" << std::endl;
 			std::cout << "frames decoded: " << frames_decoded << std::endl;
@@ -126,8 +126,9 @@ int main(int argc, char **argv)
 	const auto frame_size = v.get_frame_size();
 	const auto [frame_width, frame_height] = frame_size.value();
 
-	vio::examples::utils::frame_queue<vio::examples::utils::simple_frame> frame_queue(30);
-	std::thread t(&decode_thread, std::ref(v), std::ref(frame_queue));
+	bool is_decoding_required = true;
+	vio::examples::utils::frame_queue<vio::examples::utils::simple_frame> frame_queue(3);
+	std::thread t(&decode_thread, std::ref(v), std::ref(frame_queue), std::ref(is_decoding_required));
 
 	GLFWwindow *window = nullptr;
 	GLuint texture_handle;
@@ -160,6 +161,7 @@ int main(int argc, char **argv)
 	std::cout << "Decode time: " << std::chrono::duration_cast<std::chrono::milliseconds>(total_end_time - total_start_time).count() << "ms" << std::endl;
 	std::cout << "Frames shown:   " << frames_shown << std::endl;
 
+	is_decoding_required = false;
 	t.join();
 	v.release();
 

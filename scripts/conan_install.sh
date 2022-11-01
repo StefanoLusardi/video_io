@@ -31,3 +31,10 @@ conan install examples \
     --settings compiler=$COMPILER \
     --settings compiler.version=$COMPILER_VERSION \
     --build missing
+
+conan install benchmarks \
+    --install-folder build/$BUILD_TYPE/modules/benchmarks \
+    --settings build_type=$BUILD_TYPE \
+    --settings compiler=$COMPILER \
+    --settings compiler.version=$COMPILER_VERSION \
+    --build missing

@@ -1,0 +1,10 @@
+[requires]
+cppbenchmark/cci.20201029
+opencv/4.5.5
+
+[generators]
+cmake_find_package
+
+[options]
+
+[imports]

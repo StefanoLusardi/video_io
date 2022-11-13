@@ -297,8 +297,7 @@ bool video_writer::convert(const uint8_t* data)
             return false;
         }
 
-        sws_scale(_sws_ctx, (const uint8_t * const *)_tmp_frame->data, _tmp_frame->linesize, 
-            0, _codec_ctx->height, _frame->data, _frame->linesize);
+        sws_scale(_sws_ctx, (const uint8_t * const *)_tmp_frame->data, _tmp_frame->linesize, 0, _codec_ctx->height, _frame->data, _frame->linesize);
     }
     else 
     {

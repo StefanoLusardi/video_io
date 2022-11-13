@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 	vio::video_reader v;
 	const auto video_path = "../../../../tests/data/testsrc_10sec_30fps.mkv";
 
-	if (!v.open(video_path, vio::decode_support::SW))
+	if (!v.open(video_path, vio::screen_options{})) // , vio::decode_support::SW
 	{
 		std::cout << "Unable to open video: " << video_path << std::endl;
 		return 1;

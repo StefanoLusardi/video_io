@@ -10,7 +10,10 @@ extern "C"
 #include <libavutil/frame.h>
 #include <libavutil/buffer.h>
 #include <libavutil/hwcontext.h>
+#include <libavdevice/avdevice.h> // required for screen recording only
 }
+
+#include <thread>
 
 namespace vio
 {
@@ -19,6 +22,7 @@ video_reader::video_reader() noexcept
 {
     init(); 
     av_log_set_level(0);
+    avdevice_register_all(); // required for screen recording only
 }
 
 video_reader::~video_reader() noexcept
@@ -49,7 +53,7 @@ void video_reader::init()
 
 // void video_reader::set_log_callback(const log_callback_t& cb, const log_level& level) { vio::logger::get().set_log_callback(cb, level); }
 
-bool video_reader::open(const std::string& video_path, decode_support decode_preference)
+bool video_reader::open(const char* video_path, decode_support decode_preference)
 {
     std::lock_guard lock(_open_mutex);
     release();
@@ -79,7 +83,77 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
         return false;
     }
 
-    if (auto r = avformat_open_input(&_format_ctx, video_path.c_str(), nullptr, &_options); r < 0)
+    return open_input(video_path, nullptr);
+}
+
+bool video_reader::open(const char* video_path, screen_options so)
+{
+    std::lock_guard lock(_open_mutex);
+    release();
+
+    log_info("Opening video path:", video_path);
+    _decode_support = decode_support::SW;
+
+    if (_format_ctx = avformat_alloc_context(); !_format_ctx)
+    {
+        log_error("avformat_alloc_context");
+        return false;
+    }
+
+    AVInputFormat* input_format = nullptr;
+    
+    const char* screen_name = ":1+100,100";
+    // const char* screen_name = nullptr;
+
+#if defined(__APPLE__)
+        input_format = av_find_input_format("avfoundation");
+        screen_name = "1";
+#elif defined(_WIN32)
+        input_format = av_find_input_format("gdigrab");
+        screen_name = "desktop";
+#elif defined(__linux__)
+        input_format = av_find_input_format("x11grab");
+        // if(screen_name = std::getenv("DISPLAY"); !screen_name)
+        //     screen_name = ":0";
+#endif
+
+    if (auto r = av_dict_set(&_options, "framerate", "30", 0); r < 0)
+    {
+        log_error("av_dict_set", vio::logger::get().err2str(r));
+        return false;
+    }
+
+    if (auto r = av_dict_set(&_options, "preset", "ultrafast", 0); r < 0)
+    {
+        log_error("av_dict_set", vio::logger::get().err2str(r));
+        return false;
+    }
+
+    if (auto r = av_dict_set(&_options, "video_size", "640x480", 0); r < 0)
+    {
+        log_error("av_dict_set", vio::logger::get().err2str(r));
+        return false;
+    }
+
+    // TODO: check gdigrab on Windows. On Linux these offsets are useless.
+    if (auto r = av_dict_set(&_options, "offset_x", "50", 0); r < 0)
+    {
+        log_error("av_dict_set", vio::logger::get().err2str(r));
+        return false;
+    }
+
+    if (auto r = av_dict_set(&_options, "offset_y", "50", 0); r < 0)
+    {
+        log_error("av_dict_set", vio::logger::get().err2str(r));
+        return false;
+    }
+
+    return open_input(screen_name, input_format);
+}
+
+bool video_reader::open_input(const char* input, AVInputFormat* input_format)
+{
+    if (auto r = avformat_open_input(&_format_ctx, input, input_format, &_options); r < 0)
     {
         log_error("avformat_open_input", vio::logger::get().err2str(r));
         return false;
@@ -109,6 +183,7 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
         log_error("avcodec_alloc_context3");
         return false;
     }
+    _codec_ctx->thread_count = std::thread::hardware_concurrency();
 
     if (auto r = avcodec_parameters_to_context(_codec_ctx, _format_ctx->streams[_stream_index]->codecpar); r < 0)
     {
@@ -170,6 +245,8 @@ bool video_reader::open(const std::string& video_path, decode_support decode_pre
         log_error("av_frame_get_buffer", vio::logger::get().err2str(r));
         return false;
     }
+
+    // TODO: init _sws_ctx
 
     _is_opened = true;
     log_info("Video Reader is opened correctly");
@@ -259,12 +336,6 @@ auto video_reader::get_fps() const -> std::optional<double>
 
 bool video_reader::decode(AVPacket *packet)
 {
-    if(auto r = av_read_frame(_format_ctx, packet); r < 0)
-    {
-        log_error("av_read_frame", vio::logger::get().err2str(r));
-        return false;
-    }
-
     while(true)
     {
         if (packet->stream_index != _stream_index)
@@ -282,7 +353,7 @@ bool video_reader::decode(AVPacket *packet)
 
         if (auto r = avcodec_receive_frame(_codec_ctx, _src_frame); r < 0)
         {
-            if (AVERROR(EAGAIN) == r)
+            if (AVERROR(EAGAIN) == r) // if(r == AVERROR_EOF || r == AVERROR(EAGAIN))
                 continue; 
             
             av_packet_unref(packet);
@@ -294,48 +365,6 @@ bool video_reader::decode(AVPacket *packet)
         return true;
     }
 }
-
-/*
-        decode(nullptr);
-
-bool video_reader::decode(AVPacket *packet)
-{
-    if(auto r = av_read_frame(_format_ctx, _packet); r < 0)
-    {
-        log_error("av_read_frame", vio::logger::get().err2str(r));
-        return false;
-    }
-
-    while(true)
-    {
-        if (_packet->stream_index != _stream_index)
-        {
-            av_packet_unref(_packet);
-            continue;
-        }
-
-        if (auto r = avcodec_send_packet(_codec_ctx, _packet); r < 0)
-        {        
-            log_error("avcodec_send_packet", r);
-            return false;
-        }
-
-        if (auto r = avcodec_receive_frame(_codec_ctx, _src_frame); r < 0)
-        {
-            if(r == AVERROR_EOF || r == AVERROR(EAGAIN))
-            {
-                av_packet_unref(_packet);
-                continue;
-            }
-
-            return false;
-        }
-    }
-
-    av_packet_unref(_packet);
-    return true;
-}
-*/
 
 bool video_reader::copy_hw_frame()
 {
@@ -384,8 +413,7 @@ bool video_reader::convert(uint8_t** data, double* pts)
     }
 
     // _dst_frame->linesize[0] = _codec_ctx->width * 3;
-    sws_scale(_sws_ctx, _tmp_frame->data, _tmp_frame->linesize,
-        0, _codec_ctx->height, _dst_frame->data, _dst_frame->linesize);
+    sws_scale(_sws_ctx, _tmp_frame->data, _tmp_frame->linesize, 0, _codec_ctx->height, _dst_frame->data, _dst_frame->linesize);
 
     *data = _dst_frame->data[0];
 
@@ -403,6 +431,13 @@ bool video_reader::read(uint8_t** data, double* pts)
     if(!_is_opened)
         return false;
 
+    if(auto r = av_read_frame(_format_ctx, _packet); r < 0)
+    {
+        log_error("av_read_frame", vio::logger::get().err2str(r));
+        av_packet_unref(_packet);
+        return false;
+    }
+
     if(!decode(_packet))
         return false;
 
@@ -418,6 +453,7 @@ bool video_reader::release()
         return false;
 
     log_info("Release video reader");
+    decode(nullptr);
 
     if(_sws_ctx)
         sws_freeContext(_sws_ctx);

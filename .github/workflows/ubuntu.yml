@@ -44,7 +44,7 @@ jobs:
         # export DEBIAN_FRONTEND=noninteractive
         
         conan profile show default
-        conan install . \
+        conan install video_io \
           -c tools.system.package_manager:mode=install \
           --install-folder ${{env.BUILD_DIR}}/modules \
           --settings build_type=${{matrix.build_type}} \
@@ -56,7 +56,7 @@ jobs:
     - name: Configure
       run: |
         echo Configure
-        cmake -S . -B ${{env.BUILD_DIR}} -G ${{matrix.generator}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DVIDEO_IO_BUILD_TESTS=OFF
+        cmake -S . -B ${{env.BUILD_DIR}} -G ${{matrix.generator}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DVIDEO_IO_BUILD_TESTS=OFF -DVIDEO_IO_BUILD_EXAMPLES=OFF
     
     - name: Build
       run: |

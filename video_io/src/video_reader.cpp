@@ -101,16 +101,16 @@ bool video_reader::open(const char* video_path, screen_options so)
     }
 
     AVInputFormat* input_format = nullptr;
-    
-    const char* screen_name = ":1+100,100";
-    // const char* screen_name = nullptr;
+    const char* screen_name = nullptr;
 
 #if defined(__APPLE__)
         input_format = av_find_input_format("avfoundation");
         screen_name = "1";
 #elif defined(_WIN32)
-        input_format = av_find_input_format("gdigrab");
-        screen_name = "desktop";
+        // input_format = av_find_input_format("gdigrab");
+        // screen_name = "desktop";
+        input_format = av_find_input_format("dshow");
+        screen_name = "video=USB2.0 VGA UVC WebCam";
 #elif defined(__linux__)
         input_format = av_find_input_format("x11grab");
         // if(screen_name = std::getenv("DISPLAY"); !screen_name)

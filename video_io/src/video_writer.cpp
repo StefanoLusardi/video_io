@@ -415,7 +415,7 @@ bool video_writer::check(const std::string& video_path)
         log_error("av_find_best_stream", vio::logger::get().err2str(stream_index));
         return false;
     }
-
+/*
     AVStream* stream = fmt_ctx->streams[stream_index];
     stream->nb_frames;
     stream->r_frame_rate;
@@ -429,8 +429,8 @@ bool video_writer::check(const std::string& video_path)
 
     codec->name;
     codec->long_name;
-
     (AVPixelFormat)stream->codecpar->format;
+*/
 
     if(fmt_ctx)
     {

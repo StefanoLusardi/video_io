@@ -34,7 +34,7 @@ public:
     // void set_log_callback(const log_callback_t& cb, const log_level& level = log_level::all);
 
     bool open(const char* video_path, decode_support decode_preference = decode_support::none);
-    bool open(const char* screen_name = "", screen_options so = screen_options{});
+    bool open(const char* screen_name, screen_options screen_opt);
     bool is_opened() const;
     bool read(uint8_t** data, double* pts = nullptr);
     bool release();
@@ -47,7 +47,7 @@ public:
 
 protected:
     void init();
-    bool open_input(const char* input, AVInputFormat* input_format);
+    bool open_input(const char* input, const AVInputFormat* input_format);
     bool decode(AVPacket *packet);
     bool convert(uint8_t** data, double* pts);
     bool copy_hw_frame();

@@ -1,7 +1,8 @@
 [requires]
-imgui/1.87
-glfw/3.3.7
-opencv/4.5.5
+#imgui/1.87
+#glfw/3.3.7
+#opencv/4.5.5
+video_io/0.1.0@test/disable_all
 
 [generators]
 cmake_find_package
@@ -9,8 +10,8 @@ cmake_find_package
 [options]
 
 [imports]
-./res/bindings, imgui_impl_glfw.h -> ../../bindings
-./res/bindings, imgui_impl_glfw.cpp -> ../../bindings
-./res/bindings, imgui_impl_opengl3.h -> ../../bindings
-./res/bindings, imgui_impl_opengl3.cpp -> ../../bindings
-./res/bindings, imgui_impl_opengl3_loader.h  -> ../../bindings
+#./res/bindings, imgui_impl_glfw.h -> ../../bindings
+#./res/bindings, imgui_impl_glfw.cpp -> ../../bindings
+#./res/bindings, imgui_impl_opengl3.h -> ../../bindings
+#./res/bindings, imgui_impl_opengl3.cpp -> ../../bindings
+#./res/bindings, imgui_impl_opengl3_loader.h  -> ../../bindings

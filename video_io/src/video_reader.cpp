@@ -10,7 +10,7 @@ extern "C"
 #include <libavutil/frame.h>
 #include <libavutil/buffer.h>
 #include <libavutil/hwcontext.h>
-#include <libavdevice/avdevice.h> // required for screen recording only
+// #include <libavdevice/avdevice.h> // required for screen recording only
 }
 
 #include <thread>
@@ -22,7 +22,7 @@ video_reader::video_reader() noexcept
 {
     init(); 
     av_log_set_level(0);
-    avdevice_register_all(); // required for screen recording only
+    // avdevice_register_all(); // required for screen recording only
 }
 
 video_reader::~video_reader() noexcept
@@ -86,7 +86,7 @@ bool video_reader::open(const char* video_path, decode_support decode_preference
     return open_input(video_path, nullptr);
 }
 
-bool video_reader::open(const char* video_path, screen_options so)
+bool video_reader::open(const char* screen_name, screen_options screen_opt)
 {
     std::lock_guard lock(_open_mutex);
     release();
@@ -100,8 +100,8 @@ bool video_reader::open(const char* video_path, screen_options so)
         return false;
     }
 
-    AVInputFormat* input_format = nullptr;
-    const char* screen_name = nullptr;
+    const AVInputFormat* input_format = nullptr;
+    screen_name = nullptr;
 
 #if defined(__APPLE__)
         input_format = av_find_input_format("avfoundation");
@@ -151,7 +151,7 @@ bool video_reader::open(const char* video_path, screen_options so)
     return open_input(screen_name, input_format);
 }
 
-bool video_reader::open_input(const char* input, AVInputFormat* input_format)
+bool video_reader::open_input(const char* input, const AVInputFormat* input_format)
 {
     if (auto r = avformat_open_input(&_format_ctx, input, input_format, &_options); r < 0)
     {
@@ -167,7 +167,7 @@ bool video_reader::open_input(const char* input, AVInputFormat* input_format)
 
 /* NOTE: this is a breaking change from ffmpeg v4.x to ffmpeg v5.x in function av_find_best_stream */
 #if LIBAVCODEC_VERSION_MAJOR <= 58
-    AVCodec* codec = nullptr;
+    const AVCodec* codec = nullptr;
 #elif LIBAVCODEC_VERSION_MAJOR >= 59
     const AVCodec* codec = nullptr;
 #endif

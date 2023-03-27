@@ -1,5 +1,6 @@
 set(WINDOWS_EXPORT_ALL_SYMBOLS ON)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/modules/video_io)
+
 find_package(ffmpeg REQUIRED)
 
 set(TARGET_SOURCES_PUBLIC
@@ -16,24 +17,22 @@ set(TARGET_SOURCES_PRIVATE
     src/video_writer.cpp
 )
 
-# Shared library
 set(TARGET_NAME video_io)
 add_library(${TARGET_NAME} SHARED)
-add_library(vio::${TARGET_NAME} ALIAS ${TARGET_NAME})
+add_library(video_io::${TARGET_NAME} ALIAS ${TARGET_NAME})
+
 target_sources(${TARGET_NAME} PUBLIC ${TARGET_SOURCES_PUBLIC} PRIVATE ${TARGET_SOURCES_PRIVATE})
 target_compile_features(${TARGET_NAME} PUBLIC cxx_std_17)
 target_compile_definitions(${TARGET_NAME} PUBLIC VIDEO_IO)
 target_include_directories(${TARGET_NAME} PUBLIC include)
-target_link_libraries(${TARGET_NAME} PRIVATE ffmpeg::ffmpeg)
-set_target_properties(${TARGET_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION} SOVERSION ${${PROJECT_NAME}_VERSION_MAJOR})
+target_link_libraries(${TARGET_NAME} PRIVATE 
+    ffmpeg::avformat 
+    ffmpeg::avcodec 
+    ffmpeg::swscale 
+    ffmpeg::avutil
+)
 
-# Static library
-set(TARGET_NAME_STATIC video_io-static)
-add_library(${TARGET_NAME_STATIC} STATIC)
-add_library(vio::${TARGET_NAME_STATIC} ALIAS ${TARGET_NAME_STATIC})
-target_sources(${TARGET_NAME_STATIC} PUBLIC ${TARGET_SOURCES_PUBLIC} PRIVATE ${TARGET_SOURCES_PRIVATE})
-target_compile_features(${TARGET_NAME_STATIC} PUBLIC cxx_std_17)
-target_compile_definitions(${TARGET_NAME_STATIC} PUBLIC VIDEO_IO)
-target_include_directories(${TARGET_NAME_STATIC} PUBLIC include)
-target_link_libraries(${TARGET_NAME_STATIC} PRIVATE ffmpeg::ffmpeg)
-set_target_properties(${TARGET_NAME_STATIC} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION} SOVERSION ${${PROJECT_NAME}_VERSION_MAJOR})
+set_target_properties(${TARGET_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION} SOVERSION ${${PROJECT_NAME}_VERSION_MAJOR})
+set_target_properties(${TARGET_NAME} PROPERTIES PUBLIC_HEADER "${TARGET_SOURCES_PUBLIC}")
+
+install(TARGETS ${TARGET_NAME} PUBLIC_HEADER DESTINATION include/video_io)
